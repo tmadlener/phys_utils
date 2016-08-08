@@ -1,0 +1,7 @@
+* Physics Utils
+The name is merely here to have something somewhat descriptive.
+This repository contains all sorts of different small programs and headers that are developed as small tools during other work.
+It is not all strictly related to physics but from a programming point of view, but most (if not all) of it is used in a physics environment.
+
+Most of this will be written in c++11 and probably won't compile below (that is unless I have needed it somewhere where c++11 was not available).
+Also most of this will concern ROOT.

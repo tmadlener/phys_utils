@@ -1,0 +1,8 @@
+# ignore the temporary files emacs creates
+**/#*
+
+# ignore logfiles
+**/*.log
+*.log
+**/*.out
+*.out
