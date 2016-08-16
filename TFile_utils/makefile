@@ -9,4 +9,4 @@ CXXFLAGS=-Wall
 all: printRootFile
 
 printRootFile: printRootFile.C
-	$(CXX) $^ -I$(SNIPPET_DIR) $(ROOT_CONFIG) $(CXXFLAGS) -o $@
+	$(CXX) $^ -I$(SNIPPET_DIR) $(ROOT_CONFIG) $(CXXFLAGS) -o $@ -I../
