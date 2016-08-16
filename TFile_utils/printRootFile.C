@@ -73,7 +73,7 @@ void print(TTree* tree)
 void printObject(TObject* obj)
 {
   std::string objName = obj->GetName();
-  objName = currentDir += "/" + objName;
+  objName = currentDir + "/" + objName;
   // check if the object has been printed yet and skip if so.
   if (std::find(printedTObjects.begin(), printedTObjects.end(), objName) != printedTObjects.end()) return;
 
