@@ -1,4 +1,5 @@
 #include "string_stuff.h"
+#include "general/recurse.h"
 
 #include "TFile.h"
 #include "TObjArray.h"
@@ -74,6 +75,7 @@ void printObject(TObject* obj)
 {
   std::string objName = obj->GetName();
   objName = currentDir + "/" + objName;
+  indentLevel = indentDifference * countStrInStr(currentDir, "/");
   // check if the object has been printed yet and skip if so.
   if (std::find(printedTObjects.begin(), printedTObjects.end(), objName) != printedTObjects.end()) return;
 
@@ -86,29 +88,34 @@ void printObject(TObject* obj)
   printedTObjects.push_back(objName);
 }
 
+/**
+ * print the TDirectory name and adjust the indenting.
+ * Due to this not being part of the recursion routine we have to do some cleanup from possible
+ * previously visited TDirectories before we can actually print the name and adjust the indentation
+ * for the content of the current TDirectory.
+ *
+ * TODO: There are currently some differences in indentation when there are no TTrees in the TDirectory.
+ * Not sure where they come from or how they can be mitigated at the moment, but in any case are only
+ * whitespace related!
+ */
+void printDirectory(TDirectory* dir)
+{
+  currentDir = removeAfterLast(currentDir, "/");
+  indentLevel = indentDifference * countStrInStr(currentDir, "/");
+
+  std::string dirName = dir->GetName();
+  std::cout << std::string(indentLevel, ' ') << dirName << "/" << std::endl;
+  currentDir += ("/" + dirName);
+}
+
+
 /** print recursively by going through all TDirectories that are in the file and contain a TTree. */
 template<typename T>
 void printRecursively(const T* fileOrDir)
 {
-  TIter nextKey(fileOrDir->GetListOfKeys());
-  TKey* key = nullptr;
-  while ((key = static_cast<TKey*>(nextKey()))) {
-    TObject* obj = key->ReadObj();
-    if ( !obj->IsA()->InheritsFrom(TDirectory::Class()) ) {
-      printObject(obj);
-    } else {
-      std::string dirName = static_cast<TDirectory*>(obj)->GetName();
-      std::cout << std::string(indentLevel, ' ') << dirName << "/" << std::endl;
-      currentDir += "/" + dirName;
-
-      indentLevel += indentDifference;
-      printRecursively(static_cast<TDirectory*>(obj));
-      indentLevel -= indentDifference;
-
-      // now we move to the next directory, so we have to remove the last part of the path again
-      currentDir = removeAfterLast(currentDir, "/");
-    }
-  }
+  auto printO = [](TObject* o) { printObject(o); };
+  auto printD = [](TDirectory* d) { printDirectory(d); };
+  recurseOnFile(fileOrDir, printO, printD);
 }
 
 /** "main" function. */
