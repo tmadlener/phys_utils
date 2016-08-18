@@ -1,13 +1,13 @@
 #ifndef PHYS_UTILS_RECURSE__
 #define PHYS_UTILS_RECURSE__
 
+#include "general/root_utils.h"
+
 #include "TObject.h"
 #include "TDirectory.h"
 #include "TIterator.h"
 #include "TKey.h"
 #include "TClass.h"
-
-// #include "type_deduction_helper.h"
 
 #include <functional>
 
@@ -26,18 +26,20 @@ std::function<void(TDirectory*)> noopVoidFunction([](TDirectory*)->void {;});
  * only two arguments when no additional action on a directory is needed.
  *
  * @param file the TFile or TDirectory to recurse on.
- * @param func any function object that takes a TObject* as its single argument.
+ * @param func any function object that takes a TObject* as its single argument. NOTE: This is a reference!
+ * This is by choice, as in this way a functor can be passed in, which can then be accessed by e.g. the dirFunc
+ * to set something directory specific.
  * @param dirFunc any function taking a TDirectory* as its single argument that is executed on each
  * directory but is not part of the recursion.
  */
 template<typename T, typename F, typename DF = decltype(noopVoidFunction)>
-void recurseOnFile(const T* file, F func, DF dirFunc = noopVoidFunction)
+void recurseOnFile(const T* file, F& func, DF dirFunc = noopVoidFunction)
 {
   TIter nextKey(file->GetListOfKeys());
   TKey* key = nullptr;
   while ((key = static_cast<TKey*>(nextKey()))) {
     TObject* obj = key->ReadObj();
-    if ((!obj->IsA()->InheritsFrom(TDirectory::Class()))) {
+    if (!inheritsFrom<TDirectory>(obj)) {
       func(obj);
     } else {
       // TDirectory is the base-class that implements the GetListOfKeys function

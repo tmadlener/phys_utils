@@ -2,11 +2,15 @@
 SNIPPET_DIR=$(HOME)/snippets
 # root configuration including the libs, the include directory and the flags needed for compilation
 ROOT_CONFIG=$(shell root-config --libs --cflags)
+INC_DIRS=-I$(SNIPPET_DIR) -I../
 
 CXX=g++
 CXXFLAGS=-Wall
 
-all: printRootFile
+all: printRootFile saveCanvas
 
 printRootFile: printRootFile.C
-	$(CXX) $^ -I$(SNIPPET_DIR) $(ROOT_CONFIG) $(CXXFLAGS) -o $@ -I../
+	$(CXX) $^ $(INC_DIRS) $(ROOT_CONFIG) $(CXXFLAGS) -o $@
+
+saveCanvas: saveCanvas.C
+	$(CXX) $^ $(INC_DIRS) $(ROOT_CONFIG) $(CXXFLAGS) -o $@

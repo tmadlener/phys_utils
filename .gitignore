@@ -1,13 +1,16 @@
 # ignore the temporary files emacs creates
 **/#*
 
-# ignore logfiles
+# ignore logfiles and other stuff
 **/*.log
 *.log
 **/*.out
 *.out
+**/*.pdf
+*.pdf
 
 # executables. TODO: find an easier way to do this once there are too many to keep track of
 TFile_utils/printRootFile
+TFile_utils/saveCanvas
 TGraph_utils/test/testTGAData
 TGraph_utils/test/testPoint
