@@ -79,7 +79,7 @@ void printObject(TObject* obj)
   // check if the object has been printed yet and skip if so.
   if (std::find(printedTObjects.begin(), printedTObjects.end(), objName) != printedTObjects.end()) return;
 
-  if ( obj->IsA()->InheritsFrom(TTree::Class()) ) {
+  if ( inheritsFrom<TTree>(obj) ) {
     print(static_cast<TTree*>(obj));
   } else {
     print(obj);

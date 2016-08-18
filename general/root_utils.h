@@ -11,6 +11,15 @@
 #include <string>
 #include <vector>
 
+/** check if the object is of type RT via TObject::InheritsFrom()*/
+template<typename RT> inline
+bool inheritsFrom(const TObject* obj)
+{
+  // it seems the call to ::IsA() is not necessary (This might has to be revisited for versions below 6).
+  // it is even no longer listed in the documentation for version 6.07/07 (17.08.16). Nevertheless it still compiles
+  return obj/*->IsA()*/->InheritsFrom(RT::Class());
+}
+
 /** get from Root file. Using dynamic cast to get throught the inheritance stuff correctly. */
 template<typename T> inline
 T* getFromFile(TFile* f, const std::string& name)
@@ -30,13 +39,14 @@ std::vector<T*> getAllFromFile(F* f)
   TKey* key = nullptr;
   while ( (key = static_cast<TKey*>(nextKey())) ) { // loop over all keys and check if they inherit from the desired class
     TObject* obj = key->ReadObj();
-    if (obj->IsA()->InheritsFrom(T::Class())) {
+    if (inheritsFrom<T>(obj)) {
       objects.push_back(static_cast<T*>(obj));
     }
   }
   return objects;
 }
 
+/** get from a TCanvas by name via dynamic cast. */
 template<typename T> inline
 T* getFromCanvas(const TCanvas* c, const std::string& name)
 {
