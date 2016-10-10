@@ -26,6 +26,8 @@ public:
   /** copy-constructor for deep copying the internal pointers. */
   ToyMCOutEvent(const ToyMCOutEvent& other);
 
+  ToyMCOutEvent& operator=(const ToyMCOutEvent&);
+
   /** destructor, deleting the internal pointers. */
   ~ToyMCOutEvent();
 
@@ -54,6 +56,7 @@ private:
   unsigned m_negEvent{};
 
   unsigned m_flags{}; /**< storing additional information. */
+
 };
 
 ToyMCOutEvent::ToyMCOutEvent(const TLorentzVector& muPos, const TLorentzVector& muNeg, const TLorentzVector& dimuon,
@@ -64,6 +67,14 @@ ToyMCOutEvent::ToyMCOutEvent(const TLorentzVector& muPos, const TLorentzVector& 
 }
 
 ToyMCOutEvent::ToyMCOutEvent(const ToyMCOutEvent& other)
+  : m_muPos(clone(other.m_muPos)), m_muNeg(clone(other.m_muNeg)), m_dimuon(clone(other.m_dimuon)),
+    m_posEvent(other.m_posEvent), m_negEvent(other.m_negEvent), m_flags(other.m_flags)
+{
+  // Nothing to do here
+}
+
+ToyMCOutEvent& ToyMCOutEvent::operator=(const ToyMCOutEvent& other)
+
 {
   m_posEvent = other.m_posEvent;
   m_negEvent = other.m_negEvent;
@@ -72,6 +83,8 @@ ToyMCOutEvent::ToyMCOutEvent(const ToyMCOutEvent& other)
   m_muPos = clone(other.m_muPos);
   m_muNeg = clone(other.m_muNeg);
   m_dimuon = clone(other.m_dimuon);
+
+  return *this;
 }
 
 ToyMCOutEvent::~ToyMCOutEvent()

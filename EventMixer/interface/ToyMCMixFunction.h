@@ -27,6 +27,7 @@ std::vector<ToyMCOutEvent> ToyMCMixFunction(const ToyMCEvent& evi, const ToyMCEv
   const double massHigh = config::ToyMCMixConditions.massHigh;
 
   std::vector<ToyMCOutEvent> events;
+  events.reserve(2); // at max two events will be here
 
   if (pInJ_mass > massLow && pInJ_mass < massHigh) {
     events.push_back(ToyMCOutEvent(evi.muPos(), evj.muNeg(), posI_negJ, i, j));
