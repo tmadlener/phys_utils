@@ -1,0 +1,4 @@
+{
+    "tree" : "genData",
+    "cut" : "((lepP.Pt() > 4.5 && TMath::Abs(lepP.Rapidity()) < 1.2) || (lepP.Pt() > 4.0 && TMath::Abs(lepP.Rapidity()) > 1.2 && TMath::Abs(lepP.Rapidity()) < 1.4) || (lepP.Pt() > 3.5 && TMath::Abs(lepP.Rapidity()) > 1.4 && TMath::Abs(lepP.Rapidity()) < 1.6)) && ((lepN.Pt() > 4.5 && TMath::Abs(lepN.Rapidity()) < 1.2) || (lepN.Pt() > 4.0 && TMath::Abs(lepN.Rapidity()) > 1.2 && TMath::Abs(lepN.Rapidity()) < 1.4) || (lepN.Pt() > 3.5 && TMath::Abs(lepN.Rapidity()) > 1.4 && TMath::Abs(lepN.Rapidity()) < 1.6))"
+}
