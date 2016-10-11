@@ -2,16 +2,14 @@
 #define EVENTMIXER_EVENTMIXER_H__
 
 #include "MiscHelper.h"
+#include "general/progress.h"
 
 #include "TTree.h"
 #include "TLorentzVector.h"
 #include "TFile.h"
 
 #include <iostream>
-#include <memory>
 #include <string>
-#include <chrono>
-#include <cmath>
 
 /**
  * EventMixer class to mix different Events from one TTree.
@@ -79,10 +77,6 @@ private:
 
   TFile* m_outFile{nullptr}; /**< Output TFile. for ROOT reasons not a std::unique_ptr. */
 
-  std::chrono::high_resolution_clock::time_point m_startTime;
-
-  /** print the progress of the mixing. Prints every percent of progress. */
-  void printProgress(const size_t& event, const size_t& nEvents);
 };
 
 template<typename EventT, typename OutEventT>
@@ -116,7 +110,7 @@ void EventMixer<EventT, OutEventT>::mix(CondF cond, const long int maxEvents)
 
   std::cout << "Starting mixing of " << nEvents << " events. Possible (input) combinations: " << nCombinations << std::endl;
 
-  m_startTime = std::chrono::high_resolution_clock::now(); // start the clock
+  auto startTime = std::chrono::high_resolution_clock::now(); // start the clock
   for (size_t i = 0; i < nEvents; ++i) {
     m_inTree->GetEntry(i);
     // second loop starts one event after the first loop! -> No mixing of the same event, and no double checking of events
@@ -129,7 +123,7 @@ void EventMixer<EventT, OutEventT>::mix(CondF cond, const long int maxEvents)
         m_outEvent = event;
         m_outTree->Fill();
       }
-      printProgress(trials, nCombinations); // put here to ensure that trials != 0 for all calls
+      printProgress(trials, nCombinations, startTime); // put here to ensure that trials != 0 for all calls
     }
   }
 
@@ -143,22 +137,6 @@ void EventMixer<EventT, OutEventT>::writeToFile()
   m_outTree->Write();
   m_outFile->Write();
   m_outFile->Close();
-}
-
-template<typename EventT, typename OutEventT>
-void EventMixer<EventT, OutEventT>::printProgress(const size_t& event, const size_t& nEvents)
-{
-  using namespace std::chrono; // avoid some typing effort
-  if (event % (nEvents / 100)) return; // don't flood stdout
-
-  const SimpleTime elapsedTime{duration_cast<seconds>(high_resolution_clock::now() - m_startTime).count()};
-
-  // calculate the approximate remaining time
-  const double compRatio = static_cast<double>(event) / nEvents;
-  const SimpleTime remainTime{static_cast<unsigned>(elapsedTime.count() / compRatio) - elapsedTime.count()};
-
-  std::cout << "Processed combination " << event << " / " << nEvents << " (" << std::setw(3) <<  compRatio * 100 << " %)."
-            << " Elapsed time: " << elapsedTime << ". Approx. " << remainTime << " remaining." << std::endl;
 }
 
 #endif
