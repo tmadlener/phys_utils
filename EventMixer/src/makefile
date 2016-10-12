@@ -2,7 +2,7 @@ ROOT_LIBS=$(shell root-config --libs)
 ROOT_FLAGS=$(shell root-config --cflags)
 CXX_FLAGS=-Wall -Wextra
 CXX=g++
-INCDIR=-I../interface -I../config
+INCDIR=-I../interface -I../config -I../../
 
 all: simpleMixer
 
