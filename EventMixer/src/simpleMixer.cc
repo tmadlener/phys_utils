@@ -11,18 +11,24 @@
 #include <iostream>
 
 /** small main to test and demonstrate the EventMixer class. */
-int main(int, char**)
+int main(int argc, char* argv[])
 {
-  TFile* file = TFile::Open(config::General.inputFileName.c_str());
+  if (argc < 3) {
+    std::cerr << "Need the name of an input and of an output .root file" << std::endl;
+    return 1;
+  }
+
+  TFile* file = TFile::Open(argv[1]);
   TTree* tree = static_cast<TTree*>(file->Get(config::InputTree.treeName.c_str()));
 
-  EventMixer<ToyMCEvent, ToyMCOutEvent> eventMixer(tree, config::General.outputFileName.c_str(),
-                                                   config::OutputTree.treeName.c_str());
+  EventMixer<ToyMCEvent, ToyMCOutEvent> eventMixer(tree, argv[2],
+                                                   config::OutputTree.treeName);
   std::cout << "Event mixer initialized" << std::endl;
   std::cout << "Event mixer, starting event loops" << std::endl;
 
   using namespace std::placeholders;
-  eventMixer.mix(std::bind(ToyMCMixFunction, _1, _2, _3, _4), config::General.maxEvents);
+  eventMixer.mix(std::bind(ToyMCMixFunction, _1, _2, _3, _4), config::General.maxEvents,
+                 config::Logging.filename);
 
   eventMixer.writeToFile();
 

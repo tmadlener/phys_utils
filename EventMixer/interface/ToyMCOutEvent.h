@@ -7,7 +7,7 @@
 #include "TLorentzVector.h"
 #include "TTree.h"
 
-#include <memory>
+#include <algorithm>
 
 /**
  * Output Event for ToyMC samples.
@@ -26,10 +26,14 @@ public:
   /** copy-constructor for deep copying the internal pointers. */
   ToyMCOutEvent(const ToyMCOutEvent& other);
 
-  ToyMCOutEvent& operator=(const ToyMCOutEvent&);
+  /** assignment operator, using the 'copy and swap' idiom. */
+  ToyMCOutEvent& operator=(ToyMCOutEvent other);
 
   /** destructor, deleting the internal pointers. */
   ~ToyMCOutEvent();
+
+  /** swap for implementing the 'copy and swap' idiom. */
+  void swap(ToyMCOutEvent other);
 
   void Init(TTree* tree);
 
@@ -73,17 +77,21 @@ ToyMCOutEvent::ToyMCOutEvent(const ToyMCOutEvent& other)
   // Nothing to do here
 }
 
-ToyMCOutEvent& ToyMCOutEvent::operator=(const ToyMCOutEvent& other)
+void ToyMCOutEvent::swap(ToyMCOutEvent other)
+{
+  std::swap(m_muPos, other.m_muPos);
+  std::swap(m_muNeg, other.m_muNeg);
+  std::swap(m_dimuon, other.m_dimuon);
+
+  std::swap(m_posEvent, other.m_posEvent);
+  std::swap(m_negEvent, other.m_negEvent);
+  std::swap(m_flags, other.m_flags);
+}
+
+ToyMCOutEvent& ToyMCOutEvent::operator=(ToyMCOutEvent other)
 
 {
-  m_posEvent = other.m_posEvent;
-  m_negEvent = other.m_negEvent;
-  m_flags = other.m_flags;
-
-  m_muPos = clone(other.m_muPos);
-  m_muNeg = clone(other.m_muNeg);
-  m_dimuon = clone(other.m_dimuon);
-
+  this->swap(other);
   return *this;
 }
 

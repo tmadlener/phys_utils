@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <fstream>
 
 /**
  * EventMixer class to mix different Events from one TTree.
@@ -54,9 +55,12 @@ public:
    *
    * The number of events to be processed can be controlled via the maxEvents variable. Setting it to a negative
    * value results in taking all events present in the input TTree.
+   *
+   * If a non-empty string is passed to the logfile parameter the progress will be printed to a file with this name
+   * instead of stdout.
    */
   template<typename CondF>
-  void mix(CondF cond, const long int maxEvents = -1);
+  void mix(CondF cond, const long int maxEvents = -1, const std::string& logfile = "");
 
   /** write the output TTree to the output file and close the file. */
   void writeToFile();
@@ -96,7 +100,7 @@ EventMixer<EventT, OutEventT>::EventMixer(TTree* inTree, const std::string& outF
 
 template<typename EventT, typename OutEventT>
 template<typename CondF>
-void EventMixer<EventT, OutEventT>::mix(CondF cond, const long int maxEvents)
+void EventMixer<EventT, OutEventT>::mix(CondF cond, const long int maxEvents, const std::string& logfile)
 {
   size_t mixed{};
   size_t trials{};
@@ -108,9 +112,14 @@ void EventMixer<EventT, OutEventT>::mix(CondF cond, const long int maxEvents)
 
   const size_t nCombinations = 0.5 * nEvents * (nEvents - 1); // we now the number of (input) combinations to check
 
-  std::cout << "Starting mixing of " << nEvents << " events. Possible (input) combinations: " << nCombinations << std::endl;
+  // open a filestream only if the progress output should be redirected to a file, otherwise use stdout
+  std::ofstream filestream;
+  if (!logfile.empty()) filestream.open(logfile);
+  std::ostream& logstream = logfile.empty() ? std::cout : filestream;
 
+  std::cout << "Starting mixing of " << nEvents << " events. Possible (input) combinations: " << nCombinations << std::endl;
   auto startTime = std::chrono::high_resolution_clock::now(); // start the clock
+
   for (size_t i = 0; i < nEvents; ++i) {
     m_inTree->GetEntry(i);
     // second loop starts one event after the first loop! -> No mixing of the same event, and no double checking of events
@@ -123,11 +132,12 @@ void EventMixer<EventT, OutEventT>::mix(CondF cond, const long int maxEvents)
         m_outEvent = event;
         m_outTree->Fill();
       }
-      printProgress(trials, nCombinations, startTime); // put here to ensure that trials != 0 for all calls
+      printProgress(trials, nCombinations, startTime, 2500, logstream); // put here to ensure that trials != 0 for all calls
     }
   }
 
   std::cout << "created " << mixed << " new events from " << trials << " possible (input) combinations." << std::endl;
+  if (!logfile.empty()) filestream.close(); // cannot close an unopened fstream
 }
 
 template<typename EventT, typename OutEventT>
