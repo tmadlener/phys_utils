@@ -94,6 +94,7 @@ EventMixer<EventT, OutEventT>::EventMixer(TTree* inTree, const std::string& outF
   // init the output tree and file
   m_outFile = new TFile(outFileName.c_str(), "recreate");
   m_outTree = new TTree(outTreeName.c_str(), "mixed events tree");
+  m_outTree->SetDirectory(m_outFile);
 
   m_outEvent.Init(m_outTree);
 }
@@ -132,7 +133,7 @@ void EventMixer<EventT, OutEventT>::mix(CondF cond, const long int maxEvents, co
         m_outEvent = event;
         m_outTree->Fill();
       }
-      printProgress(trials, nCombinations, startTime, 2500, logstream); // put here to ensure that trials != 0 for all calls
+      printProgress(trials, nCombinations, startTime, 1000, logstream); // put here to ensure that trials != 0 for all calls
     }
   }
 

@@ -26,9 +26,14 @@ int main(int argc, char* argv[])
   std::cout << "Event mixer initialized" << std::endl;
   std::cout << "Event mixer, starting event loops" << std::endl;
 
+  // if there are enough command line parameters, take them as min and max values for the mass
+  const double massMin = argc < 5 ? config::ToyMCMixConditions.massLow : std::atof(argv[3]);
+  const double massMax = argc < 5 ? config::ToyMCMixConditions.massHigh : std::atof(argv[4]);
+
+  std::cout << "Mass window in mixing: " << massMin << " < M [GeV] < " << massMax << std::endl;
   using namespace std::placeholders;
-  eventMixer.mix(std::bind(ToyMCMixFunction, _1, _2, _3, _4), config::General.maxEvents,
-                 config::Logging.filename);
+  eventMixer.mix(std::bind(ToyMCMixFunction, _1, _2, _3, _4, massMin, massMax), config::General.maxEvents);
+                 // config::Logging.filename);
 
   eventMixer.writeToFile();
 
