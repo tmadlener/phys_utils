@@ -1,0 +1,155 @@
+{
+    "inputfiles":
+    [
+        ["/path/to/input/file1.root", "file1 base legend entry"],
+        ["/path/to/input/file2.root", "file2 base legend entry"]
+    ],
+
+    "outbase": "comp_effs_base",
+    "plots":
+    [
+        {
+            "graphs": ["lth_HX_rap1", ""],
+            "yTitle": "#lambda_{#theta}^{HX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lth_PX_rap1", ""],
+            "yTitle": "#lambda_{#theta}^{PX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lth_CS_rap1", ""],
+            "yTitle": "#lambda_{#theta}^{CS}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lth_HX_rap2", ""],
+            "yTitle": "#lambda_{#theta}^{HX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["lth_PX_rap2", ""],
+            "yTitle": "#lambda_{#theta}^{PX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["lth_CS_rap2", ""],
+            "yTitle": "#lambda_{#theta}^{CS}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+
+        {
+            "graphs": ["ltp_HX_rap1", ""],
+            "yTitle": "#lambda_{#theta#phi}^{HX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltp_PX_rap1", ""],
+            "yTitle": "#lambda_{#theta#phi}^{PX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltp_CS_rap1", ""],
+            "yTitle": "#lambda_{#theta#phi}^{CS}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltp_HX_rap2", ""],
+            "yTitle": "#lambda_{#theta#phi}^{HX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["ltp_PX_rap2", ""],
+            "yTitle": "#lambda_{#theta#phi}^{PX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["ltp_CS_rap2", ""],
+            "yTitle": "#lambda_{#theta#phi}^{CS}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+
+        {
+            "graphs": ["lph_HX_rap1", ""],
+            "yTitle": "#lambda_{#phi}^{HX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lph_PX_rap1", ""],
+            "yTitle": "#lambda_{#phi}^{PX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lph_CS_rap1", ""],
+            "yTitle": "#lambda_{#phi}^{CS}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lph_HX_rap2", ""],
+            "yTitle": "#lambda_{#phi}^{HX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["lph_PX_rap2", ""],
+            "yTitle": "#lambda_{#phi}^{PX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["lph_CS_rap2", ""],
+            "yTitle": "#lambda_{#phi}^{CS}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+
+        {
+            "graphs": ["ltilde_HX_rap1", ""],
+            "yTitle": "#tilde{#lambda}^{HX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltilde_PX_rap1", ""],
+            "yTitle": "#tilde{#lambda}^{PX}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltilde_CS_rap1", ""],
+            "yTitle": "#tilde{#lambda}^{CS}", "file": "", "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltilde_HX_rap2", ""],
+            "yTitle": "#tilde{#lambda}^{HX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["ltilde_PX_rap2", ""],
+            "yTitle": "#tilde{#lambda}^{PX}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["ltilde_CS_rap2", ""],
+            "yTitle": "#tilde{#lambda}^{CS}", "file": "", "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        }
+    ],
+
+    "markers":
+    {
+        "color": [2, 9, 8, 6, 1],
+        "style": [24, 25, 26, 27],
+        "size": 2
+    },
+
+    "canvas":
+    {
+        "size": [1000, 1000],
+        "fillColor": 0,
+        "gridX": true,
+        "gridY": true,
+        "logX": false,
+        "logY": false
+    },
+
+    "legend":
+    {
+        "draw": true,
+        "position": [0.62, 0.1, 0.92, 0.35],
+        "fillColor": 0,
+        "textFont": 72,
+        "textSize": 0.03,
+        "borderSize": 1
+    },
+
+    "axes":
+    {
+        "xTitle": "p_{T}",
+        "yTitle": "",
+        "xRange": [10, 70],
+        "yRange": [-1.1, 1.1]
+    },
+
+    "decoration":
+    {
+        "text":
+        {
+            "textSize": 0.035,
+            "position": [12.0, -0.88]
+        }
+    }
+}

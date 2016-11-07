@@ -1,0 +1,103 @@
+{
+    "inputfiles":
+    [
+        ["/path/to/inputfile/1.root", "file1 base legend entry"]
+    ],
+
+    "outbase": "output_file_base",
+    "plots":
+    [
+        {
+            "graphs": ["lth_HX_rap1", "HX", "lth_PX_rap1", "PX", "lth_CS_rap1", "CS"],
+            "yTitle": "#lambda_{#theta}",
+            "file": "lth_all_rap1",
+            "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lth_HX_rap2", "HX", "lth_PX_rap2", "PX", "lth_CS_rap2", "CS"],
+            "yTitle": "#lambda_{#theta}",
+            "file": "lth_all_rap2",
+            "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["ltp_HX_rap1", "HX", "ltp_PX_rap1", "PX", "ltp_CS_rap1", "CS"],
+            "yTitle": "#lambda_{#theta#phi}",
+            "file": "ltp_all_rap1",
+            "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltp_HX_rap2", "HX", "ltp_PX_rap2", "PX", "ltp_CS_rap2", "CS"],
+            "yTitle": "#lambda_{#theta#phi}",
+            "file": "ltp_all_rap2",
+            "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["lph_HX_rap1", "HX", "lph_PX_rap1", "PX", "lph_CS_rap1", "CS"],
+            "yTitle": "#lambda_{#phi}",
+            "file": "lph_all_rap1",
+            "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["lph_HX_rap2", "HX", "lph_PX_rap2", "PX", "lph_CS_rap2", "CS"],
+            "yTitle": "#lambda_{#phi}",
+            "file": "lph_all_rap2",
+            "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        },
+        {
+            "graphs": ["ltilde_HX_rap1", "HX", "ltilde_PX_rap1", "PX", "ltilde_CS_rap1", "CS"],
+            "yTitle": "#tilde{#lambda}",
+            "file": "ltilde_all_rap1",
+            "text": "|y^{J/#Psi}| < 0.6"
+        },
+        {
+            "graphs": ["ltilde_HX_rap2", "HX", "ltilde_PX_rap2", "PX", "ltilde_CS_rap2", "CS"],
+            "yTitle": "#tilde{#lambda}",
+            "file": "ltilde_all_rap2",
+            "text": "0.6 < |y^{J/#Psi}| < 1.2"
+        }
+    ],
+
+    "markers":
+    {
+        "color": [2, 9, 8, 6, 1],
+        "style": [24, 25, 26, 27],
+        "size": 2
+    },
+
+    "canvas":
+    {
+        "size": [1000, 1000],
+        "fillColor": 0,
+        "gridX": true,
+        "gridY": true,
+        "logX": false,
+        "logY": false
+    },
+
+    "legend":
+    {
+        "draw": true,
+        "position": [0.62, 0.1, 0.92, 0.35],
+        "fillColor": 0,
+        "textFont": 72,
+        "textSize": 0.03,
+        "borderSize": 1
+    },
+
+    "axes":
+    {
+        "xTitle": "p_{T}",
+        "yTitle": "",
+        "xRange": [10, 70],
+        "yRange": [-1.1, 1.1]
+    },
+
+    "decoration":
+    {
+        "text":
+        {
+            "textSize": 0.035,
+            "position": [12.0, -0.88]
+        }
+    }
+}
