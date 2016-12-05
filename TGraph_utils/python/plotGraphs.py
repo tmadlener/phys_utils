@@ -1,6 +1,7 @@
 import ROOT as r
 import argparse
 import json
+import math
 
 def recurseOnFile(f, func, dirFunc = None):
     """
@@ -151,6 +152,25 @@ def getMinMaxAll(graphDict):
     return [ymin, ymax]
 
 
+def removeNans(graph):
+    """
+    Remove points where either x or y are NaN
+    """
+    # collect all points to remove first in ascending order and remove them in reverse order as
+    # TGraph::RemovePoint(i) changes the index of the points following i
+    remPoints = []
+    for i in range(graph.GetN()):
+        x = r.Double(0)
+        y = r.Double(0)
+        graph.GetPoint(i, x, y)
+        if math.isnan(x) or math.isnan(y):
+            remPoints.append(i)
+
+    for i in reversed(remPoints):
+        graph.RemovePoint(i)
+        print('Removed point {} from graph {}, because x or y were nan'.format(i, graph.GetName()))
+
+
 """
 ROOT setup
 """
@@ -211,6 +231,7 @@ for plot in json["plots"]:
         for i in range(len(plot["graphs"]) / 2): # even elements are graph names, odd are legend entry additions
             if plot["graphs"][2*i] in graphs: # only plot if the graph has been collected from the file
                 graph = graphs[plot["graphs"][2*i]]
+                removeNans(graph)
                 plotCounter += 1
                 # color and style
                 [col, style] = getColorAndStyle(plotCounter, json["markers"])
