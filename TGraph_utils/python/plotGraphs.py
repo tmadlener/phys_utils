@@ -102,7 +102,15 @@ def createPlotHisto(canvas, axesJson):
     plotHist = canvas.DrawFrame(xRange[0], yRange[0], xRange[1], yRange[1])
     plotHist.SetXTitle(axesJson["xTitle"])
     plotHist.SetYTitle(axesJson["yTitle"])
-    plotHist.GetYaxis().SetTitleOffset(1.4)
+    # plotHist.GetYaxis().SetTitleOffset(1.4)
+
+    if "labSize" in axesJson:
+        plotHist.SetLabelSize(axesJson["labSize"], "X")
+        plotHist.SetLabelSize(axesJson["labSize"], "Y")
+
+    if "titleSize" in axesJson:
+        plotHist.SetTitleSize(axesJson["titleSize"], "X")
+        plotHist.SetTitleSize(axesJson["titleSize"], "Y")
 
     return plotHist
 
@@ -232,7 +240,6 @@ for plot in json["plots"]:
             if plot["graphs"][2*i] in graphs: # only plot if the graph has been collected from the file
                 graph = graphs[plot["graphs"][2*i]]
                 removeNans(graph)
-                plotCounter += 1
                 # color and style
                 [col, style] = getColorAndStyle(plotCounter, json["markers"])
                 graph.SetMarkerColor(col)
@@ -246,6 +253,7 @@ for plot in json["plots"]:
                     legEntry = ", ".join([legEntryBase, plot["graphs"][2*i + 1]])
 
                 legend.AddEntry(graph, legEntry, "ple")
+                plotCounter += 1
 
         if json["legend"]["draw"]:
             legend.Draw()
