@@ -22,6 +22,12 @@ with open(args.jsonFile, 'r') as f:
 
 
 """
+Make it possible to have some lines (e.g. to load a function) in the json file
+"""
+for line in json["processLines"]:
+    ROOT.gROOT.ProcessLine(line)
+
+"""
 Get TTree, apply cuts and store tree under the same name in the output file
 """
 inputTree = ROOT.TChain(json["tree"])
