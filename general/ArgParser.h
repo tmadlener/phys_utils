@@ -76,11 +76,12 @@ T ArgParser::getOptionVal(const std::string& key, const T& defVal) const
       return val;
     }
     std::cerr << "\'" << key << "\' was found in the input arguments but could not be converted to \' "
-              << typeid(val).name() << "\'" << std::endl;
+              << typeid(val).name() << "\'";
   } else {
-    std::cerr << "\'" << key << "\' was not found in the input arguments" << std::endl;
+    std::cerr << "\'" << key << "\' was not found in the input arguments";
   }
 
+  std::cerr << ". Using [ " << defVal << " ] as default value." << std::endl;
   return defVal;
 }
 
