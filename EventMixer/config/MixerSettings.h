@@ -29,12 +29,12 @@ namespace config {
   } General; /**< General settings*/
 
   struct {
-    const double massLow = 2.9; /**< lower bound of mass range in GeV.*/
-    const double massHigh = 3.2; /**< upper bound of mass range in GeV.*/
+    const double massLow = 2.0; /**< lower bound of mass range in GeV.*/
+    const double massHigh = 4.0; /**< upper bound of mass range in GeV.*/
   } ToyMCMixConditions; /**< Settings for when to mix Toy MC events. */
 
   struct {
-    const std::string filename = "logfile.log"; /**< logfile name. Set to empty string for output to stdout*/
+    const std::string filename = "/afs/hephy.at/work/t/tmadlener/ChiPol/ToyMC/EventMixing/progress_3.5GeV.out"; /**< logfile name. Set to empty string for output to stdout*/
   } Logging;
 }
 
