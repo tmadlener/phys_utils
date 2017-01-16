@@ -8,13 +8,7 @@ import math
 import argparse
 
 from utils.recurse import recurseOnFile, ObjectCollector
-
-def divide2D(h,g,n):
-    """
-    dummy definition
-    """
-    h.SetName(n)
-    return h
+from utils.TH2D_utils import divide2D
 
 class TH2DCollector(ObjectCollector):
     """
