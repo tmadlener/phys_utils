@@ -55,6 +55,43 @@ class Bin:
         h.SetBinError(i,j, self.err)
 
 
+def compareCoverage(h, g, name = ""):
+    """
+    Check the coverage of the two TH2Ds.
+
+    The meaning of the different values that are assigned to the new histogram can be found at the
+    definition of getCoverage()
+    """
+    c = h.Clone()
+    for i in range(0, c.GetNbinsX() + 2):
+        for j in range(0, c.GetNbinsY() + 2):
+            coverage = getCoverage(c, g, i, j)
+            c.SetBinContent(i, j, coverage)
+
+    if name:
+        c.SetName(name)
+    return c
+
+
+def getCoverage(h, g, i, j):
+    """
+    Check if bin (i,j) in histograms h and g are filled
+
+    Bins that are filled in h but not in g, get assigned +1, respectively bins that are filled in h
+    but not in g get assigned -1. Bins that are filled in both are assigned 0, bins that are filed
+    in neither are assigned -2.
+    """
+    hCont = h.GetBinContent(i,j) # need no errors for this
+    gCont = g.GetBinContent(i,j)
+
+    if hCont > 0 and gCont > 0: return 0
+    if hCont == 0 and gCont == 0: return -2
+    if hCont > 0 and gCont == 0: return 1
+    if hCont == 0 and gCont > 0: return -1
+
+    print("getCoverage fell through all cases it can handle. This should not happen. Maybe something is wrong with the inputs?")
+    return -1000
+
 
 def printTH2D(h):
     """Print the TH2D as an NxM matrix, directly to the screen"""

@@ -8,7 +8,7 @@ import math
 import argparse
 
 from utils.recurse import recurseOnFile, ObjectCollector
-from utils.TH2D_utils import divide2D
+from utils.TH2D_utils import divide2D, compareCoverage
 
 class TH2DCollector(ObjectCollector):
     """
@@ -36,7 +36,7 @@ def getPtRap(fullName):
     return[int(strList[-1][2:]), int(strList[-2][3:])]
 
 
-def divideHistograms(numHists, denomHists):
+def divideHistograms(numHists, denomHists, func = divide2D, algoName = ""):
     """
     Divide all numHists by the denomHists based on their name endings
     """
@@ -45,11 +45,11 @@ def divideHistograms(numHists, denomHists):
         rapPt = getRapPtStr(denomN)
         numH = [h for n, h in numHists.items() if n.lower().endswith(rapPt)]
         if len(numH) == 1:
-            ratioN = "_".join([numH[0].GetName().replace(rapPt, ""), "", denomN.replace(rapPt, ""), rapPt])
+            ratioN = "_".join([algoName, numH[0].GetName().replace(rapPt, ""), "", denomN.replace(rapPt, ""), rapPt])
             print(ratioN)
             if ratioN in ratios:
                 print("WARNING: {} already present in ratios. Replacing it.".format(ratioN))
-            ratios[ratioN] = divide2D(numH[0], denomH, ratioN)
+            ratios[ratioN] = func(numH[0], denomH, ratioN)
         else:
             print("Could not get (unambiguous) numerator histogram for {}. Got {} possible"
                   "candidates. Skipping this histogram.".format(denomN, len(numH)))
@@ -98,9 +98,16 @@ parser.add_argument("--denominator-base", dest="denominatorBase", help="The base
 parser.add_argument("--output-base", dest="outputBase", help="The base name for the output histograms. "
                     "If left empty it will be created automatically from the numerator and denominator bases.",
                     action="store")
+parser.add_argument("--create-covmap", dest="createCovMap", help="Create a coverage map, for checking which "
+                    "if bins had to be set to 0 in the division. These maps are stored in the output file.",
+                    action="store_true")
+parser.add_argument("--no-ratios", dest="divideHists", help="Do not create the ratio histograms",
+                    action="store_false")
 
-parser.set_defaults(numeratorBase="", denominatorBase="", outputBase="")
+parser.set_defaults(numeratorBase="", denominatorBase="", outputBase="",
+                    createCovMap=False, divideHists=True)
 args = parser.parse_args()
+
 
 """
 Script
@@ -114,10 +121,19 @@ denomF = TFile.Open(args.denominatorFile)
 
 numHists = collectHistograms(numF, args.numeratorBase)
 denomHists = collectHistograms(denomF, args.denominatorBase)
-ratioHists = divideHistograms(numHists, denomHists)
 
 outputF = TFile(args.outputFile, "recreate")
-storeRatioHists(outputF, ratioHists, args.outputBase)
+if args.divideHists:
+    ratioHists = divideHistograms(numHists, denomHists, divide2D, "ratio")
+    storeRatioHists(outputF, ratioHists, args.outputBase)
+
+if args.createCovMap:
+    covMaps = divideHistograms(numHists, denomHists, compareCoverage, "covmap")
+    ofbase = "" # cannot simply pass args.outputBase, since that will overwrite possibly present ratio hists
+    if args.outputBase:
+        ofbase = "_".join(["covmap", args.outputBase])
+    storeRatioHists(outputF, covMaps, ofbase)
+
 
 outputF.Close()
 numF.Close()
