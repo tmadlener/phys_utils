@@ -1,5 +1,6 @@
 # ignore the temporary files emacs creates
 **/#*
+.tramp_history
 
 # ignore logfiles and other stuff
 **/*.log
@@ -10,6 +11,8 @@
 *.pdf
 **/*.root
 *.root
+**/*.pyc
+*.pyc
 
 # executables. TODO: find an easier way to do this once there are too many to keep track of
 TFile_utils/printRootFile
@@ -17,3 +20,8 @@ TFile_utils/saveCanvas
 TGraph_utils/test/testTGAData
 TGraph_utils/test/testPoint
 EventMixer/src/simpleMixer
+
+# ignore some folders (for now)
+macros/
+scripts/
+test/
