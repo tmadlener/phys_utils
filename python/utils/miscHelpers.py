@@ -62,3 +62,10 @@ def mergeDicts(*dicts):
     for dictionary in dicts:
         merged.update(dictionary)
     return merged
+
+
+def filterDict(d, key):
+    """
+    Filter a dictionary to contain only keys matching key (string only currently)
+    """
+    return {k: v for (k, v) in d.iteritems() if key in k}
