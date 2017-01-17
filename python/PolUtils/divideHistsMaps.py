@@ -7,17 +7,8 @@
 import math
 import argparse
 
-from utils.recurse import recurseOnFile, ObjectCollector
+from utils.recurse import collectHistograms
 from utils.TH2D_utils import divide2D, compareCoverage
-
-class TH2DCollector(ObjectCollector):
-    """
-    Collector object to collect all TH2Ds from a given file into a dict
-    """
-
-    def __init__(self, rgx):
-        ObjectCollector.__init__(self, rgx, "TH2D")
-
 
 def getRapPtStr(fullName):
     """
@@ -66,16 +57,6 @@ def storeRatioHists(f, hists, baseName = ""):
         if baseName:
             h.SetName("_".join([baseName, getRapPtStr(name)]))
         h.Write()
-
-
-def collectHistograms(f, basename):
-    """
-    Collect all TH2Ds from TFile f, whose name matches basename and return them in a dict
-    with the names as the keys and the TH2Ds as value
-    """
-    hColl = TH2DCollector(basename)
-    recurseOnFile(f, hColl)
-    return hColl.objects
 
 
 """
