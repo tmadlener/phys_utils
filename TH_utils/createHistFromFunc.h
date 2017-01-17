@@ -35,7 +35,8 @@ TH2D* createTH2DfromFunc(const int nBinsX, const double xMin, const double xMax,
       const double ymin = yMin + (j-1) * dy;
       const double ymax = yMin + j * dy;
       h->SetBinContent(i, j, calcIntegral2D(func, xmin, xmax, ymin, ymax, nStepsX, nStepsY));
-      printProgress((i-1)*nBinsY + j, nIntegrations, startTime, nBinsY);
+      h->SetBinError(i, j, 1e-9); // Setting error to zero (hopefully avoiding numerical instabilities)
+      printProgress((i-1)*nBinsY + j, nIntegrations, startTime, 4);
     }
   }
 

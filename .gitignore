@@ -25,3 +25,4 @@ EventMixer/src/simpleMixer
 macros/
 scripts/
 test/
+**/bin/
