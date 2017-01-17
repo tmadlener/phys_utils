@@ -89,7 +89,8 @@ def getCoverage(h, g, i, j):
     if hCont > 0 and gCont == 0: return 1
     if hCont == 0 and gCont > 0: return -1
 
-    print("getCoverage fell through all cases it can handle. This should not happen. Maybe something is wrong with the inputs?")
+    print("getCoverage fell through all cases it can handle with values {} and {}. This should not happen."
+          "Maybe something is wrong with the inputs?".format(hCont, gCont))
     return -1000
 
 
