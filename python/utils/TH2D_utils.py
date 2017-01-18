@@ -113,3 +113,20 @@ def printTH2D(h):
         for j in range(0, h.GetNbinsY() + 2):
             row.append(h.GetBinContent(i,j))
         print(" ".join(str(v) for v in row))
+
+
+def drawTH2DColMap(h, c):
+    """
+    Drawing a TH2D as color map requires some tweaking for a (more or less) nice result
+    Most importantly the color axis has to be moved to the left for readable axis labels
+    """
+    from ROOT import gPad, TPaletteAxis
+    c.SetRightMargin(0.175) # make some space for color axis
+    c.cd()
+    h.Draw("colz")
+    c.Update() # draw first, since the TPaletteAxis won't be available else
+    p = h.GetListOfFunctions().FindObject("palette")
+    p.SetX1NDC(0.84) # move to the right
+    p.SetX2NDC(0.89)
+    gPad.Modified()
+    gPad.Update()
