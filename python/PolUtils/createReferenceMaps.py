@@ -158,7 +158,7 @@ gROOT.SetBatch()
 ## create reference maps
 if args.createmaps:
     for lam in json["lambdas"]:
-        createRefMap(lam["lth"][0], lam["lph"][0], lam["ltp"][0], lam["rap"], lam["pt"], args.outputFile, 64, 32)
+        createRefMap(lam["lth"][0], lam["lph"][0], lam["ltp"][0], lam["rap"], lam["pt"], args.outputFile, 64, 16)
 
 
 ## fit reference maps and store fitted values together with the "reference and everything else"
