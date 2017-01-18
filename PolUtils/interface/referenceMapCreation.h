@@ -48,8 +48,13 @@ TH2D* createReferenceMap(const double lth, const double lph, const double ltp,
   name << "cosThPhi_reference_" << std::fixed << std::setprecision(1);
   name << "lth_" << lth << "_lph_" << lph
        << "_ltp_" << ltp << "_nct_" << nBinsCosTh << "_nph_" << nBinsPhi;
-  return createTH2DfromFunc(nBinsCosTh, -1.0, 1.0, nBinsPhi, -180, 180,
-                            std::bind(WcosThetaPhi, _1, _2, lth, lph, ltp), 20000, name.str());
+
+  auto* refMap = createTH2DfromFunc(nBinsCosTh, -1.0, 1.0, nBinsPhi, -180, 180,
+                                    std::bind(WcosThetaPhi, _1, _2, lth, lph, ltp), 20000, name.str());
+  refMap->SetXTitle("#cos#theta");
+  refMap->SetYTitle("#phi");
+
+  return refMap;
 }
 
 

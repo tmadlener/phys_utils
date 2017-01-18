@@ -28,13 +28,13 @@ int main(int argc, char* argv[])
   const int rapBin = parser.getOptionVal<int>("--rap", -1);
 
   TFile* f = new TFile(fn.c_str(), "update"); // make it possible to store more than one ref map in a file
-  auto* test = createReferenceMap(lth, lph, ltp, nBinsCt, nBinsPhi);
+  auto* refMap = createReferenceMap(lth, lph, ltp, nBinsCt, nBinsPhi);
 
   if (ptBin >= 0 && rapBin >= 0) {
-    test->SetName(("cosThPhi_refMap" + getBinString(rapBin, ptBin)).c_str());
+    refMap->SetName(("cosThPhi_refMap" + getBinString(rapBin, ptBin)).c_str());
   }
 
-  test->Write();
+  refMap->Write();
 
   f->Write();
   f->Close();
