@@ -12,6 +12,9 @@ def divide2D(h, g, name = ""):
     n = h.Clone()
     d = g.Clone()
 
+    if n.GetNbinsX() != d.GetNbinsX() or n.GetNbinsY() != d.GetNbinsY():
+        raise NotDivisable(n, d)
+
     # divide histograms bin by bin
     for i in range(0, n.GetNbinsX() + 2):
         for j in range(0, n.GetNbinsY() + 2):
@@ -31,6 +34,14 @@ def divide2D(h, g, name = ""):
         n.SetName(name)
 
     return n
+
+class NotDivisable(Exception):
+    """Exception raised when two histograms are not divisable"""
+    def __init__(self, h, g):
+        self.hBins = [h.GetNbinsX(), h.GetNbinsY()]
+        self.gBins = [g.GetNbinsX(), g.GetNbinsY()]
+    def __str__(self):
+        return "Histograms are not divisable. Binnings: {} vs. {}".format(self.hBins, self.gBins)
 
 
 class Bin:
