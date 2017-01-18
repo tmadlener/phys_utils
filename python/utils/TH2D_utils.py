@@ -1,10 +1,34 @@
 from math import sqrt
 
-def divide2D(h, g, name = ""):
+def normalize2D(h, N = 1):
+    """
+    Normalize histogram to N (defaults to 1)
+    Return the passed histogram
+    NOTE: This alters the passed histogram
+    """
+    # using TH2D.Scale() sets the errors to sqrt(content) it they have not been set manually before!
+    # Thus, defining own normalization, where the errors are scaled by the same factor as the bin contents
+    norm = N / h.Integral()
+    for i in range(0, h.GetNbinsX() + 2): # also scale the over- and underflow bins
+        for j in range(0, h.GetNbinsY() + 2):
+            cont = h.GetBinContent(i,j)
+            h.SetBinContent(i,j, cont * norm)
+            err = h.GetBinError(i,j)
+            h.SetBinError(i,j, err * norm)
+
+    return h
+
+
+def divide2D(h, g, name = "", normalize = False, norm = 1):
     """
     Divide histogram (TH2D) h by g doing an error propagation for each bin by calculating
     relative errors of the bins in each histogram and adding them in quadrature to get the relative
     error of the ratio.
+
+    optional arguments:
+    * name: name of returned histogram
+    * normalize: normalize histograms before dividing
+    * norm: normalization to which the histograms get normalized if desired
 
     Passed histograms are not changed by a call to this function, since they get cloned before
     anything happens and a new histogram is returned.
@@ -14,6 +38,10 @@ def divide2D(h, g, name = ""):
 
     if n.GetNbinsX() != d.GetNbinsX() or n.GetNbinsY() != d.GetNbinsY():
         raise NotDivisable(n, d)
+
+    if normalize:
+        n = normalize2D(n, norm)
+        d = normalize2D(d, norm)
 
     # divide histograms bin by bin
     for i in range(0, n.GetNbinsX() + 2):

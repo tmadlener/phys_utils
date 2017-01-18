@@ -6,6 +6,7 @@
 
 import math
 import argparse
+from functools import partial
 
 from utils.recurse import collectHistograms
 from utils.TH2D_utils import divide2D, compareCoverage
@@ -37,7 +38,6 @@ def divideHistograms(numHists, denomHists, func = divide2D, algoName = ""):
         numH = [h for n, h in numHists.items() if n.lower().endswith(rapPt)]
         if len(numH) == 1:
             ratioN = "_".join([algoName, numH[0].GetName().replace(rapPt, ""), "", denomN.replace(rapPt, ""), rapPt])
-            print(ratioN)
             if ratioN in ratios:
                 print("WARNING: {} already present in ratios. Replacing it.".format(ratioN))
             ratios[ratioN] = func(numH[0], denomH, ratioN)
@@ -84,9 +84,12 @@ parser.add_argument("--create-covmap", dest="createCovMap", help="Create a cover
                     action="store_true")
 parser.add_argument("--no-ratios", dest="divideHists", help="Do not create the ratio histograms",
                     action="store_false")
+parser.add_argument("--normalize", dest="normHists", help="Normalize histograms to 1 before dividing them",
+                    action="store_true")
+
 
 parser.set_defaults(numeratorBase="", denominatorBase="", outputBase="",
-                    createCovMap=False, divideHists=True)
+                    createCovMap=False, divideHists=True, normHists=False)
 args = parser.parse_args()
 
 
@@ -105,7 +108,8 @@ denomHists = collectHistograms(denomF, args.denominatorBase)
 
 outputF = TFile(args.outputFile, "recreate")
 if args.divideHists:
-    ratioHists = divideHistograms(numHists, denomHists, divide2D, "ratio")
+    divide = partial(divide2D, normalize=args.normHists, norm = 1)
+    ratioHists = divideHistograms(numHists, denomHists, divide, "ratio")
     storeRatioHists(outputF, ratioHists, args.outputBase)
 
 if args.createCovMap:
