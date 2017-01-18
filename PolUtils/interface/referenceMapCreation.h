@@ -51,7 +51,7 @@ TH2D* createReferenceMap(const double lth, const double lph, const double ltp,
 
   auto* refMap = createTH2DfromFunc(nBinsCosTh, -1.0, 1.0, nBinsPhi, -180, 180,
                                     std::bind(WcosThetaPhi, _1, _2, lth, lph, ltp), 20000, name.str());
-  refMap->SetXTitle("#cos#theta");
+  refMap->SetXTitle("cos#theta");
   refMap->SetYTitle("#phi");
 
   return refMap;

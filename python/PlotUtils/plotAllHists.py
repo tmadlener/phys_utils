@@ -56,6 +56,7 @@ gROOT.SetBatch()
 gROOT.ProcessLine("gErrorIgnoreLevel = 1001") # don't litter stdout
 
 f = TFile.Open(args.inputFile)
+print("Saving all histograms matching \'{}\' from file \'{}\'".format(args.histRgx, args.inputFile))
 histSaver = HistSaverIfMatch(args.histRgx, args.extension, args.outPath)
 recurseOnFile(f, histSaver)
 
