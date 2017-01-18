@@ -8,19 +8,35 @@
 
 for arg in "$@"; do
   case ${arg} in
-  createRef|ref|all )
+  # this can probably be done better!
+  all )
     CREATE_REF=1
-    ;&
-  fitRef|ref|all )
     FIT_REF=1
-    ;&
-  createCorr|corr|all )
     CREATE_CORR=1
-    ;&
-  createData|data|all )
     CREATE_DATA=1
-    ;&
-  fitData|data|all )
+    FIT_DATA=1
+    ;;
+  ref )
+    CREATE_REF=1
+    FIT_REF=1
+    ;;
+  data )
+    CREATE_DATA=1
+    FIT_DATA=1
+    ;;
+  createRef )
+    CREATE_REF=1
+    ;;
+  fitRef )
+    FIT_REF=1
+    ;;
+  createCorr|corr )
+    CREATE_CORR=1
+    ;;
+  createData )
+    CREATE_DATA=1
+    ;;
+  fitData )
     FIT_DATA=1
     ;;
   plot )
@@ -52,6 +68,16 @@ dataHistFile=${dataHistBJpsiKFile}
 # output directory, where intermediately created files and results will be stored
 outputDir=$(pwd)/testdir
 
+## options and other constants
+# normHistsCorrMapCreation="--normalize" # empty/undefined for no normalization in correction map creation
+# normHistsResults="--normalize" # empty/undefined for no normalization for division for results
+# base names
+refMapBase="cosThPhi_refMap" # the base name of the reference map histograms (NOTE: defined in runCreateRefMap.cc)
+corrMapBase="correctionMap" # the base name of the correction map histograms
+corrDataBase="costhphi" # base name of the data histograms used for correction map creation
+dataOutBase="corr_costhphi" # the base name for the corrected data histograms
+
+
 # check if the setup is done and do it if it's not yet done
 if [ -z ${PHYS_UTILS_DIR+x} ]; then
   source ../setup.sh
@@ -71,20 +97,21 @@ corrMapsFile=${outputDir}/correction_maps.root
 corrDataFile=${outputDir}/corr_data_costhphi_hists.root
 
 ## setup the results directory
-mkdir -p ${outputDir}/plots
+plotDir=${outputDir}/plots/
+mkdir -p ${plotDir}
 
 
 ## create the reference maps from the json file
 condExecute ${CREATE_REF} ${refMapCreator} --createmaps --fitmaps ${refLambdasJson} ${refMapsFile}
 ## to also have reference lambdas as TGraphAsymmErrors after fitting
-condExecute ${FIT_REF} ${histFitter} --histrgx="^cosThPhi_refMap" --graphbase="reference" ${refMapsFile}
-condExecute ${MAKE_PLOTS} ${histPlotter} --histrgx="^cosThPhi_refMap" --output-path=${outputDir}/plots ${refMapsFile}
+condExecute ${FIT_REF} ${histFitter} --histrgx="^"${refMapBase} --graphbase="reference" ${refMapsFile}
+condExecute ${MAKE_PLOTS} ${histPlotter} --histrgx="^"${refMapBase} --output-path=${plotDir} ${refMapsFile}
 
 ## create correction maps
-condExecute ${CREATE_CORR} ${histDivider} --numerator-base="^costhphi_" --denominator-base="^cosThPhi_refMap" --output-base=correctionMap --create-covmap ${dataHistBJpsiKFile} ${refMapsFile} ${corrMapsFile}
-condExecute ${MAKE_PLOTS} ${histPlotter} --output-path=${outputDir}/plots ${corrMapsFile}
+condExecute ${CREATE_CORR} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${refMapBase} --output-base=${corrMapBase} --create-covmap ${normHistsCorrMapCreation} ${dataHistBJpsiKFile} ${refMapsFile} ${corrMapsFile}
+condExecute ${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrMapsFile}
 
 ## apply to data (and fit results)
-condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^costhphi" --denominator-base="^correctionMap" --output-base=corr_costhphi --create-covmap ${dataHistFile} ${corrMapsFile} ${corrDataFile}
-condExecute ${FIT_DATA} ${histFitter} --histrgx=corr_costhphi --graphbase="" ${corrDataFile}
-condExecute ${MAKE_PLOTS} ${histPlotter} --output-path=${outputDir}/plots ${corrDataFile}
+condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base=${dataOutBase} --create-covmap ${normHistsResults} ${dataHistFile} ${corrMapsFile} ${corrDataFile}
+condExecute ${FIT_DATA} ${histFitter} --histrgx="^"${dataOutBase} --graphbase="results" ${corrDataFile}
+condExecute ${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrDataFile}
