@@ -59,8 +59,8 @@ function condExecute() {
 }
 
 ## inputs:
-# file where the reference lambdas are stored (used to create the reference maps)
-refLambdasJson=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins/data_lambdas_reference.json
+# file where the raw B to J/Psi K data is stored (needed for reference lambdas)
+rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins/tmpFiles/selEvents_data.root
 # file where the background subtracted data (B to J/Psi K) cos th phi histograms are stored (needed for correction map)
 dataHistBJpsiKFile=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins/data_costhphi_hists.root
 # file where the background subtracted data costh phi histograms are stored (this is the "measurement" data)
@@ -86,6 +86,7 @@ fi
 condExecute ${DO_BUILD} make -C ${PHYS_UTILS_DIR}/PolUtils -k all
 
 ## executables
+refLambdasCalc=${PHYS_UTILS_DIR}/PolUtils/bin/runCalcRefLambdas
 refMapCreator=${PHYS_UTILS_DIR}/python/PolUtils/createReferenceMaps.py
 histDivider=${PHYS_UTILS_DIR}/python/PolUtils/divideHistsMaps.py
 histFitter=${PHYS_UTILS_DIR}/python/PolUtils/fitHistsMaps.py
@@ -95,13 +96,16 @@ histPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotAllHists.py
 refMapsFile=${outputDir}/reference_maps.root
 corrMapsFile=${outputDir}/correction_maps.root
 corrDataFile=${outputDir}/corr_data_costhphi_hists.root
+refLambdasJson=${outputDir}/reference_lambdas.json
+refLambdasRoot=${outputDir}/reference_lambdas.root
 
 ## setup the results directory
 plotDir=${outputDir}/plots/
 mkdir -p ${plotDir}
 
 
-## create the reference maps from the json file
+## create the reference maps from the json file (after calculating them from data)
+condExecute ${CREATE_REF} ${refLambdasCalc} --input ${rawDataInput} --output ${refLambdasRoot} --jsonoutput ${refLambdasJson}
 condExecute ${CREATE_REF} ${refMapCreator} --createmaps --fitmaps ${refLambdasJson} ${refMapsFile}
 ## to also have reference lambdas as TGraphAsymmErrors after fitting
 condExecute ${FIT_REF} ${histFitter} --histrgx="^"${refMapBase} --graphbase="reference" ${refMapsFile}
