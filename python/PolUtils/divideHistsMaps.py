@@ -70,13 +70,13 @@ parser = argparse.ArgumentParser(description="Script for dividing TH2Ds in diffe
 parser.add_argument("numeratorFile", help="Path to the root file containing the numerator hists")
 parser.add_argument("denominatorFile", help="Path to the root file containing the denominator hists")
 parser.add_argument("outputFile", help="File in which the ratio histograms should be stored.")
-parser.add_argument("--numerator-base", dest="numeratorBase", help="The base name (without the matching ending) "
+parser.add_argument("--numerator-base", "-n", dest="numeratorBase", help="The base name (without the matching ending) "
                     "of the numeratr histograms. Leave empty to just match according to the ending.",
                     action="store")
-parser.add_argument("--denominator-base", dest="denominatorBase", help="The base name (without the matching ending) "
+parser.add_argument("--denominator-base", "-d", dest="denominatorBase", help="The base name (without the matching ending) "
                     "of the numeratr histograms. Leave empty to just match according to the ending.",
                     action="store")
-parser.add_argument("--output-base", dest="outputBase", help="The base name for the output histograms. "
+parser.add_argument("--output-base", "-o", dest="outputBase", help="The base name for the output histograms. "
                     "If left empty it will be created automatically from the numerator and denominator bases.",
                     action="store")
 parser.add_argument("--create-covmap", dest="createCovMap", help="Create a coverage map, for checking which "

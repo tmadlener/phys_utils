@@ -37,7 +37,7 @@ Argparse
 """
 parser = argparse.ArgumentParser(description="Script for plotting and saving all histograms in a file.")
 parser.add_argument("inputFile", help="File from which all histograms should be saved")
-parser.add_argument("--histrgx", help="Regex a histogram name has to match in order to be saved.",
+parser.add_argument("--histrgx", "-r", help="Regex a histogram name has to match in order to be saved.",
                     dest="histRgx", action="store")
 parser.add_argument("--output-path", "-o", help="Path to which the created files should be saved.",
                     dest="outPath", action="store")
