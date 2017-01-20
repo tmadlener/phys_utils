@@ -68,12 +68,14 @@ sample_data=odd
 ## inputs:
 # file where the raw B to J/Psi K data is stored (needed for reference lambdas)
 rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}/selEvents_data.root
-# file where the background subtracted data (B to J/Psi K) cos th phi histograms are stored (needed for correction map)
-dataHistBJpsiKFile=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}/data_costhphi_hists.root
-# file where the background subtracted data costh phi histograms are stored (this is the "measurement" data)
-dataHistFile=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_data}/data_costhphi_hists.root
+# base file name where the background subtracted B to J/Psi K data can be found
+bkgSubtrDataBJpsiKBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_input}/dataResults/data/results_Psi1S
+# base file name where the background subtracted data costh phi values can be found
+# bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/AllJpsi/results/inclusive_jpsi_full_1rapBin/results_Fit_1_Psi1S
+bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_data}/dataResults/data/results_Psi1S
+
 # output directory, where intermediately created files and results will be stored
-outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}
+outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}_new
 
 basicPlotJson=${PHYS_UTILS_DIR}/PolUtils/crossCheckGraphsBasic.json
 
@@ -103,13 +105,19 @@ histFitter=${PHYS_UTILS_DIR}/python/PolUtils/fitHistsMaps.py
 histPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotAllHists.py
 graphPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotGraphs.py
 jsonAdapter=${PHYS_UTILS_DIR}/python/PolUtils/alterGraphPlotJson.py
+cosThPhiHistCreator=${PHYS_UTILS_DIR}/PolUtils/bin/runCreateCosThPhiHists
 
 ## files created on the fly
 refMapsFile=${outputDir}/reference_maps.root
 corrMapsFile=${outputDir}/correction_maps.root
-corrDataFile=${outputDir}/cross_check_data.root
+corrDataFile=${outputDir}/corrData_hists.root
+crossCheckFile=${outputDir}/cross_check_sanity.root
 refLambdasJson=${outputDir}/reference_lambdas.json
 refLambdasRoot=${outputDir}/reference_lambdas.root
+# file where the background subtracted data costh phi histograms are stored (this is the "measurement" data)
+dataHistFile=${outputDir}/data_costhphi_hists.root
+# file where the background subtracted data (B to J/Psi K) cos th phi histograms are stored (needed for correction map)
+dataHistBJpsiKFile=${outputDir}/data_costhphi_hists_BJpsiK.root
 
 ## setup the results directory
 plotDir=${outputDir}/plots/
@@ -125,16 +133,18 @@ condExecute ${CREATE_REF}+${MAKE_PLOTS} ${histPlotter} --histrgx="^"${refMapBase
 condExecute ${CREATE_REF}+${MAKE_PLOTS} ${refMapTest} --output=${plotDir} ${refMapsFile}
 
 ## create correction maps
+condExecute ${CREATE_CORR} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBJpsiKBase} --outputfile ${dataHistBJpsiKFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1
 condExecute ${CREATE_CORR} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${refMapBase} --output-base=${corrMapBase} --create-covmap ${normHistsCorrMapCreation} ${dataHistBJpsiKFile} ${refMapsFile} ${corrMapsFile}
 condExecute ${CREATE_CORR}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrMapsFile}
 
 ## apply to data (and fit results)
+condExecute ${CREATE_DATA} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBase} --outputfile ${dataHistFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1
 condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base=${dataOutBase} --create-covmap ${normHistsResults} ${dataHistFile} ${corrMapsFile} ${corrDataFile}
 condExecute ${FIT_DATA} ${histFitter} --histrgx="^"${dataOutBase} --graphbase="results" ${corrDataFile}
 condExecute ${CREATE_DATA}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrDataFile}
 
 ## make a sanity check by applying to the data which has originally be used
-condExecute ${SANITY_CHECK} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base="cross_check" ${normHistResults} ${dataHistBJpsiKFile} ${corrMapsFile} ${outputDir}/"cross_check_same.root"
-condExecute ${SANITY_CHECK} ${histFitter} --histrgx="^cross_check" --graphbase="cross_check" ${outputDir}/"cross_check_same.root"
-condExecute ${SANITY_CHECK}+${MAKE_PLOTS} ${jsonAdapter} -i ${outputDir}/"reference_lambdas.root" "reference" -i ${outputDir}/"cross_check_same.root" "sanity check" -i ${corrDataFile} "results" --outbase ${plotDir}"san_check" ${outputDir}/crossCheckPlots.json ${basicPlotJson}
+condExecute ${SANITY_CHECK} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base="cross_check" ${normHistResults} ${dataHistBJpsiKFile} ${corrMapsFile} ${crossCheckFile}
+condExecute ${SANITY_CHECK} ${histFitter} --histrgx="^cross_check" --graphbase="cross_check" ${crossCheckFile}
+condExecute ${SANITY_CHECK}+${MAKE_PLOTS} ${jsonAdapter} -i ${outputDir}/"reference_lambdas.root" "reference" -i ${crossCheckFile} "sanity check" -i ${corrDataFile} "results" --outbase ${plotDir}"san_check" ${outputDir}/crossCheckPlots.json ${basicPlotJson}
 condExecute ${SANITY_CHECK}+${MAKE_PLOTS} ${graphPlotter} ${outputDir}/crossCheckPlots.json
