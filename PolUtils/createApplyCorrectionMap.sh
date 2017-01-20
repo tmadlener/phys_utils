@@ -49,24 +49,28 @@ for arg in "$@"; do
 done
 
 ## small helper function for slightly less typing
-## execute command only if first passed argument is 1
+## execute command only if first passed argument is 1 or 1+1
 ## command is all but the first argument (making it possible to pass in arguments)
 function condExecute() {
-  if [ ${1} = "1" ]; then
+  if [ ${1} = "1" ] || [ ${1} = "1+1" ]; then
     shift
     $@
   fi
 }
 
+sample_input=odd
+sample_data=even
+
 ## inputs:
 # file where the raw B to J/Psi K data is stored (needed for reference lambdas)
-rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins/tmpFiles/selEvents_data.root
+rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}/selEvents_data.root
 # file where the background subtracted data (B to J/Psi K) cos th phi histograms are stored (needed for correction map)
-dataHistBJpsiKFile=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins/data_costhphi_hists.root
+dataHistBJpsiKFile=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}/data_costhphi_hists.root
 # file where the background subtracted data costh phi histograms are stored (this is the "measurement" data)
-dataHistFile=${dataHistBJpsiKFile}
+dataHistFile=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_data}/data_costhphi_hists.root
 # output directory, where intermediately created files and results will be stored
-outputDir=$(pwd)/testdir
+outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}
+
 
 ## options and other constants
 # normHistsCorrMapCreation="--normalize" # empty/undefined for no normalization in correction map creation
@@ -88,6 +92,7 @@ condExecute ${DO_BUILD} make -C ${PHYS_UTILS_DIR}/PolUtils -k all
 ## executables
 refLambdasCalc=${PHYS_UTILS_DIR}/PolUtils/bin/runCalcRefLambdas
 refMapCreator=${PHYS_UTILS_DIR}/python/PolUtils/createReferenceMaps.py
+refMapTest=${PHYS_UTILS_DIR}/python/PolUtils/plotReferenceMapsTest.py
 histDivider=${PHYS_UTILS_DIR}/python/PolUtils/divideHistsMaps.py
 histFitter=${PHYS_UTILS_DIR}/python/PolUtils/fitHistsMaps.py
 histPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotAllHists.py
@@ -95,7 +100,7 @@ histPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotAllHists.py
 ## files created on the fly
 refMapsFile=${outputDir}/reference_maps.root
 corrMapsFile=${outputDir}/correction_maps.root
-corrDataFile=${outputDir}/corr_data_costhphi_hists.root
+corrDataFile=${outputDir}/cross_check_data.root
 refLambdasJson=${outputDir}/reference_lambdas.json
 refLambdasRoot=${outputDir}/reference_lambdas.root
 
@@ -109,13 +114,14 @@ condExecute ${CREATE_REF} ${refLambdasCalc} --input ${rawDataInput} --output ${r
 condExecute ${CREATE_REF} ${refMapCreator} --createmaps --fitmaps ${refLambdasJson} ${refMapsFile}
 ## to also have reference lambdas as TGraphAsymmErrors after fitting
 condExecute ${FIT_REF} ${histFitter} --histrgx="^"${refMapBase} --graphbase="reference" ${refMapsFile}
-condExecute ${MAKE_PLOTS} ${histPlotter} --histrgx="^"${refMapBase} --output-path=${plotDir} ${refMapsFile}
+condExecute ${CREATE_REF}+${MAKE_PLOTS} ${histPlotter} --histrgx="^"${refMapBase} --output-path=${plotDir} ${refMapsFile}
+condExecute ${CREATE_REF}+${MAKE_PLOTS} ${refMapTest} --output=${plotDir} ${refMapsFile}
 
 ## create correction maps
 condExecute ${CREATE_CORR} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${refMapBase} --output-base=${corrMapBase} --create-covmap ${normHistsCorrMapCreation} ${dataHistBJpsiKFile} ${refMapsFile} ${corrMapsFile}
-condExecute ${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrMapsFile}
+condExecute ${CREATE_CORR}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrMapsFile}
 
 ## apply to data (and fit results)
 condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base=${dataOutBase} --create-covmap ${normHistsResults} ${dataHistFile} ${corrMapsFile} ${corrDataFile}
 condExecute ${FIT_DATA} ${histFitter} --histrgx="^"${dataOutBase} --graphbase="results" ${corrDataFile}
-condExecute ${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrDataFile}
+condExecute ${CREATE_DATA}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrDataFile}
