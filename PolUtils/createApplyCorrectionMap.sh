@@ -15,6 +15,7 @@ for arg in "$@"; do
     CREATE_CORR=1
     CREATE_DATA=1
     FIT_DATA=1
+    SANITY_CHECK=1
     ;;
   ref )
     CREATE_REF=1
@@ -39,6 +40,9 @@ for arg in "$@"; do
   fitData )
     FIT_DATA=1
     ;;
+  san|sanityCheck )
+    SANITY_CHECK=1
+    ;;
   plot )
     MAKE_PLOTS=1
     ;;
@@ -58,8 +62,8 @@ function condExecute() {
   fi
 }
 
-sample_input=odd
-sample_data=even
+sample_input=even
+sample_data=odd
 
 ## inputs:
 # file where the raw B to J/Psi K data is stored (needed for reference lambdas)
@@ -71,6 +75,7 @@ dataHistFile=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_
 # output directory, where intermediately created files and results will be stored
 outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}
 
+basicPlotJson=${PHYS_UTILS_DIR}/PolUtils/crossCheckGraphsBasic.json
 
 ## options and other constants
 # normHistsCorrMapCreation="--normalize" # empty/undefined for no normalization in correction map creation
@@ -96,6 +101,8 @@ refMapTest=${PHYS_UTILS_DIR}/python/PolUtils/plotReferenceMapsTest.py
 histDivider=${PHYS_UTILS_DIR}/python/PolUtils/divideHistsMaps.py
 histFitter=${PHYS_UTILS_DIR}/python/PolUtils/fitHistsMaps.py
 histPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotAllHists.py
+graphPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotGraphs.py
+jsonAdapter=${PHYS_UTILS_DIR}/python/PolUtils/alterGraphPlotJson.py
 
 ## files created on the fly
 refMapsFile=${outputDir}/reference_maps.root
@@ -125,3 +132,9 @@ condExecute ${CREATE_CORR}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir}
 condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base=${dataOutBase} --create-covmap ${normHistsResults} ${dataHistFile} ${corrMapsFile} ${corrDataFile}
 condExecute ${FIT_DATA} ${histFitter} --histrgx="^"${dataOutBase} --graphbase="results" ${corrDataFile}
 condExecute ${CREATE_DATA}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrDataFile}
+
+## make a sanity check by applying to the data which has originally be used
+condExecute ${SANITY_CHECK} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base="cross_check" ${normHistResults} ${dataHistBJpsiKFile} ${corrMapsFile} ${outputDir}/"cross_check_same.root"
+condExecute ${SANITY_CHECK} ${histFitter} --histrgx="^cross_check" --graphbase="cross_check" ${outputDir}/"cross_check_same.root"
+condExecute ${SANITY_CHECK}+${MAKE_PLOTS} ${jsonAdapter} -i ${outputDir}/"reference_lambdas.root" "reference" -i ${outputDir}/"cross_check_same.root" "sanity check" -i ${corrDataFile} "results" --outbase ${plotDir}"san_check" ${outputDir}/crossCheckPlots.json ${basicPlotJson}
+condExecute ${SANITY_CHECK}+${MAKE_PLOTS} ${graphPlotter} ${outputDir}/crossCheckPlots.json
