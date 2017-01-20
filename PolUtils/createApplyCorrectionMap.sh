@@ -65,6 +65,9 @@ function condExecute() {
 sample_input=even
 sample_data=odd
 
+nBinsPhi=16
+nBinsCosTh=32
+
 ## inputs:
 # file where the raw B to J/Psi K data is stored (needed for reference lambdas)
 rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}/selEvents_data.root
@@ -75,7 +78,7 @@ bkgSubtrDataBJpsiKBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/Referenc
 bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_data}/dataResults/data/results_Psi1S
 
 # output directory, where intermediately created files and results will be stored
-outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}_new
+outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}_${nBinsCosTh}_${nBinsPhi}
 
 basicPlotJson=${PHYS_UTILS_DIR}/PolUtils/crossCheckGraphsBasic.json
 
@@ -126,19 +129,19 @@ mkdir -p ${plotDir}
 
 ## create the reference maps from the json file (after calculating them from data)
 condExecute ${CREATE_REF} ${refLambdasCalc} --input ${rawDataInput} --output ${refLambdasRoot} --jsonoutput ${refLambdasJson}
-condExecute ${CREATE_REF} ${refMapCreator} --createmaps --fitmaps ${refLambdasJson} ${refMapsFile}
+condExecute ${CREATE_REF} ${refMapCreator} --createmaps --fitmaps ${refLambdasJson} ${refMapsFile} --nBinsPhi=${nBinsPhi} --nBinsCosTh=${nBinsCosTh}
 ## to also have reference lambdas as TGraphAsymmErrors after fitting
 condExecute ${FIT_REF} ${histFitter} --histrgx="^"${refMapBase} --graphbase="reference" ${refMapsFile}
 condExecute ${CREATE_REF}+${MAKE_PLOTS} ${histPlotter} --histrgx="^"${refMapBase} --output-path=${plotDir} ${refMapsFile}
 condExecute ${CREATE_REF}+${MAKE_PLOTS} ${refMapTest} --output=${plotDir} ${refMapsFile}
 
 ## create correction maps
-condExecute ${CREATE_CORR} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBJpsiKBase} --outputfile ${dataHistBJpsiKFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1
+condExecute ${CREATE_CORR} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBJpsiKBase} --outputfile ${dataHistBJpsiKFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1 --nBinsPhi ${nBinsPhi} --nBinsCosTh ${nBinsCosTh}
 condExecute ${CREATE_CORR} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${refMapBase} --output-base=${corrMapBase} --create-covmap ${normHistsCorrMapCreation} ${dataHistBJpsiKFile} ${refMapsFile} ${corrMapsFile}
 condExecute ${CREATE_CORR}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrMapsFile}
 
 ## apply to data (and fit results)
-condExecute ${CREATE_DATA} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBase} --outputfile ${dataHistFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1
+condExecute ${CREATE_DATA} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBase} --outputfile ${dataHistFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1 --nBinsPhi ${nBinsPhi} --nBinsCosTh ${nBinsCosTh}
 condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base=${dataOutBase} --create-covmap ${normHistsResults} ${dataHistFile} ${corrMapsFile} ${corrDataFile}
 condExecute ${FIT_DATA} ${histFitter} --histrgx="^"${dataOutBase} --graphbase="results" ${corrDataFile}
 condExecute ${CREATE_DATA}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrDataFile}

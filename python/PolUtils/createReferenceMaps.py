@@ -141,6 +141,8 @@ parser.add_argument("--fitmaps", "-f", dest="fitmaps", help="Fit the created ref
                     action="store_true")
 parser.add_argument("--no-fitmaps", "-nf", dest="fitmaps", help="Do not fit the created reference maps",
                     action="store_false")
+parser.add_argument("--nBinsPhi", "-bp", dest="nBinsPhi", nargs="?", default=16)
+parser.add_argument("--nBinsCosTh", "-bc", dest="nBinsCosTh", nargs="?", default=64 )
 
 parser.set_defaults(createmaps=True, fitmaps=True)
 args = parser.parse_args()
@@ -158,7 +160,8 @@ gROOT.SetBatch()
 ## create reference maps
 if args.createmaps:
     for lam in json["lambdas"]:
-        createRefMap(lam["lth"][0], lam["lph"][0], lam["ltp"][0], lam["rap"], lam["pt"], args.outputFile, 64, 16)
+        createRefMap(lam["lth"][0], lam["lph"][0], lam["ltp"][0], lam["rap"], lam["pt"],
+                     args.outputFile, args.nBinsCosTh, args.nBinsPhi)
 
 
 ## fit reference maps and store fitted values together with the "reference and everything else"

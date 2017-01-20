@@ -21,6 +21,8 @@ int main(int argc, char* argv[])
   const int ptMax = parser.getOptionVal<int>("--ptMax", 12);
   const int rapMin = parser.getOptionVal<int>("--rapMin", 1);
   const int rapMax = parser.getOptionVal<int>("--rapMax", 2);
+  const int nBinsPhi = parser.getOptionVal<int>("--nBinsPhi", 16);
+  const int nBinsCosTh = parser.getOptionVal<int>("--nBinsCosTh", 16);
 
   TFile* fout = new TFile(outfile.c_str(), "recreate");
   for (auto iRap = rapMin; iRap <= rapMax; ++iRap) {
@@ -35,7 +37,8 @@ int main(int argc, char* argv[])
       t->SetBranchAddress("costh_HX", &cosTh);
       t->SetBranchAddress("phi_HX", &phi);
 
-      auto* hist = new TH2D(("costhphi" + binStr.str()).c_str(), "", 64, -1, 1, 16, -180, 180);
+      auto* hist = new TH2D(("costhphi" + binStr.str()).c_str(), "", nBinsCosTh, -1, 1,
+                            nBinsPhi, -180, 180);
       hist->GetXaxis()->SetTitle("cos#Theta");
       hist->GetYaxis()->SetTitle("#phi");
       const int nEntries = t->GetEntries();
