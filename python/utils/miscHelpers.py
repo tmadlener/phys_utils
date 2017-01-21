@@ -69,3 +69,41 @@ def filterDict(d, key):
     Filter a dictionary to contain only keys matching key (string only currently)
     """
     return {k: v for (k, v) in d.iteritems() if key in k}
+
+
+def getAllFilesFromDir(directory, ext):
+    """
+    Get all files with the specified extension from the directory
+    """
+    return [f for f in os.listdir(directory)
+            if os.path.isfile(os.path.join(directory, f)) and f.endswith(ext)]
+
+
+def getRapPtStr(fullName):
+    """
+    Get the rapX_ptY ending of the full name where, all characters are lower cased
+    """
+    strList = fullName.lower().split("_")
+    return "_".join([strList[-2], strList[-1]])
+
+
+def getRapPt(fullName):
+    """
+    Get the numerical values of the pt and rapidity bin (after removing anything after the first dot)
+    NOTE: assumes that this follows the convention that rapX_ptY are always at the end of the full name
+    """
+    strList = fullName.partition(".")[0].lower().split("_")
+    return[int(strList[-2][3:]), int(strList[-1][2:])]
+
+
+def getRapPtLbl(rapBin, rapBinning, ptBin, ptBinning):
+    """
+    Get the bin information as tex string
+    """
+    rapMin = rapBinning[rapBin - 1]
+    rapMax = rapBinning[rapBin]
+    ptMin = ptBinning[ptBin - 1]
+    ptMax = ptBinning[ptBin]
+
+    return "".join(["$", str(rapMin), " < |y| < ", str(rapMax), ", ", 
+                    str(ptMin), " < p_{T} < ", str(ptMax), "$"])

@@ -1,6 +1,7 @@
 # ignore the temporary files emacs creates
 **/#*
 .tramp_history
+**/auto/
 
 # ignore logfiles and other stuff
 **/*.log

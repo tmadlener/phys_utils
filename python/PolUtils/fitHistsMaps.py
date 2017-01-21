@@ -3,17 +3,8 @@
 import argparse
 
 from utils.recurse import collectHistograms
-from utils.miscHelpers import filterDict
+from utils.miscHelpers import filterDict, getRapPt
 from utils.TGraph_utils import createGraph
-
-def getPtRap(fullName):
-    """
-    Get the numerical values of the pt and rapidity bin
-    NOTE: assumes that this follows the convention that rapX_ptY are always at the end of the full name
-    """
-    strList = fullName.lower().split("_")
-    return[int(strList[-1][2:]), int(strList[-2][3:])]
-
 
 def fitAngularDistribution(h):
     """Fit the angular distribution function to the histogram"""
@@ -52,7 +43,7 @@ def getValuesFromDict(valDict, rapBin, lam, idx):
     """
     rapDict = filterDict(valDict, "rap" + str(rapBin)) # get only values for the current rap bin
     def getKey(it): # sort dict according to the pt bin
-        return getPtRap(it)[0]
+        return getRapPt(it)[1]
 
     return [rapDict.get(k)[lam][idx] for k in sorted(rapDict, key=getKey)]
 
@@ -77,7 +68,7 @@ def createAndStoreGraphs(lambdas, baseName):
     # TODO: make this more flexible
     ptBinning = [10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 50, 70]
 
-    for rapBin in set([getPtRap(k)[1] for (k, v) in lambdas.iteritems()]):
+    for rapBin in set([getRapPt(k)[0] for (k, v) in lambdas.iteritems()]):
         rapStr = "rap" + str(rapBin)
         for lam in ["lth", "lph", "ltp"]:
             graph = createRapGraph(lambdas, rapBin, lam, ptBinning)

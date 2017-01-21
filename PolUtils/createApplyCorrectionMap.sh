@@ -67,6 +67,20 @@ function condExecute() {
   fi
 }
 
+## produce a pdf from the passed .tex file, clean up afterwards and return to the
+## directory the script was in before this was called
+function cleanLatex() {
+  cwd=$(pwd)
+  cd $(dirname ${1})
+  fn=$(basename ${1})
+  basetex=${fn%.*}
+  pdflatex ${fn} -interaction=nonstopmode
+  # pdflatex ${1} -interaction=nonstopmode # run twice for correct references
+
+  rm ${basetex}.{log,aux}
+  cd ${cwd}
+}
+
 sample_input=even
 sample_data=odd
 
@@ -86,6 +100,7 @@ bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCr
 outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}_${nBinsCosTh}_${nBinsPhi}
 
 basicPlotJson=${PHYS_UTILS_DIR}/PolUtils/crossCheckGraphsBasic.json
+basicReportTex=${PHYS_UTILS_DIR}/Latex/PolUtils/reportCorrMapBase.tex
 
 ## options and other constants
 # normHistsCorrMapCreation="--normalize" # empty/undefined for no normalization in correction map creation
@@ -110,6 +125,7 @@ histPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotAllHists.py
 graphPlotter=${PHYS_UTILS_DIR}/python/PlotUtils/plotGraphs.py
 jsonAdapter=${PHYS_UTILS_DIR}/python/PolUtils/alterGraphPlotJson.py
 cosThPhiHistCreator=${PHYS_UTILS_DIR}/PolUtils/bin/runCreateCosThPhiHists
+texFileGenerator=${PHYS_UTILS_DIR}/python/PolUtils/generateReportTex.py
 
 ## files created on the fly
 refMapsFile=${outputDir}/reference_maps.root
@@ -154,3 +170,7 @@ condExecute ${SANITY_CHECK} ${histDivider} --numerator-base="^"${corrDataBase} -
 condExecute ${SANITY_CHECK} ${histFitter} --histrgx="^cross_check" --graphbase="cross_check" ${crossCheckFile}
 condExecute ${SANITY_CHECK}+${MAKE_PLOTS} ${jsonAdapter} -i ${outputDir}/"reference_lambdas.root" "reference" -i ${crossCheckFile} "sanity check" -i ${corrDataFile} "results" --outbase ${plotDir}"san_check" ${outputDir}/crossCheckPlots.json ${basicPlotJson}
 condExecute ${SANITY_CHECK}+${MAKE_PLOTS} ${graphPlotter} ${outputDir}/crossCheckPlots.json
+
+## create a report
+condExecute ${MAKE_PLOTS} ${texFileGenerator} ${plotDir} ${basicReportTex} --outputfile ${outputDir}/report.tex
+condExecute ${MAKE_PLOTS} cleanLatex ${outputDir}/report.tex

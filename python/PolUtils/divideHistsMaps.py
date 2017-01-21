@@ -10,23 +10,7 @@ from functools import partial
 
 from utils.recurse import collectHistograms
 from utils.TH2D_utils import divide2D, compareCoverage
-
-def getRapPtStr(fullName):
-    """
-    Get the rapX_ptY ending of the full name where, all characters are lower cased
-    """
-    strList = fullName.lower().split("_")
-    return "_".join([strList[-2], strList[-1]])
-
-
-def getPtRap(fullName):
-    """
-    Get the numerical values of the pt and rapidity bin
-    NOTE: assumes that this follows the convention that rapX_ptY are always at the end of the full name
-    """
-    strList = fullName.lower().split("_")
-    return[int(strList[-1][2:]), int(strList[-2][3:])]
-
+from utils.miscHelpers import getRapPtStr
 
 def divideHistograms(numHists, denomHists, func = divide2D, algoName = ""):
     """
