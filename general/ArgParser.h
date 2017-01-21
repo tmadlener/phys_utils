@@ -1,7 +1,5 @@
-#ifndef POLFW_CLARG_PARSING_H__
-#define POLFW_CLARG_PARSING_H__
-
-#include "string_stuff.h" // other repo!
+#ifndef PHYS_UTILS_GENERAL_ARGPARSER_H__
+#define PHYS_UTILS_GENERAL_ARGPARSER_H__
 
 #include <string>
 #include <sstream>

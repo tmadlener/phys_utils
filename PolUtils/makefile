@@ -5,7 +5,7 @@ CXXFLAGS=-std=c++11 -Wall -Wextra -Wpedantic -Wshadow -O2 # -Wconversion # can't
 ROOFITLIBS=-lRooFit -lRooFitCore -lMinuit -lFoam
 CXX=g++
 
-INCS=-I./interface -I../ -I. -I$(HOME)/snippets
+INCS=-I./interface -I../ -I.
 
 BIN=./bin/
 SRC=./src/
