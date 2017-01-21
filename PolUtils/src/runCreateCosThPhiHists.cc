@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
   ArgParser parser(argc, argv);
   const auto inbase = parser.getOptionVal<std::string>("--inputbase");
   const auto outfile = parser.getOptionVal<std::string>("--outputfile");
+  const auto histBase = parser.getOptionVal<std::string>("--histbase", "");
   const int ptMin = parser.getOptionVal<int>("--ptMin", 1);
   const int ptMax = parser.getOptionVal<int>("--ptMax", 12);
   const int rapMin = parser.getOptionVal<int>("--rapMin", 1);
@@ -37,8 +38,9 @@ int main(int argc, char* argv[])
       t->SetBranchAddress("costh_HX", &cosTh);
       t->SetBranchAddress("phi_HX", &phi);
 
-      auto* hist = new TH2D(("costhphi" + binStr.str()).c_str(), "", nBinsCosTh, -1, 1,
-                            nBinsPhi, -180, 180);
+      const auto histName = (histBase.empty() ? "costhphi" : histBase) + binStr.str();
+
+      auto* hist = new TH2D(histName.c_str(), "", nBinsCosTh, -1, 1, nBinsPhi, -180, 180);
       hist->GetXaxis()->SetTitle("cos#Theta");
       hist->GetYaxis()->SetTitle("#phi");
       const int nEntries = t->GetEntries();

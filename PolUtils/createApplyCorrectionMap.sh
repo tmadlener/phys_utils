@@ -52,6 +52,11 @@ for arg in "$@"; do
   esac
 done
 
+# check if the setup is done and do it if it's not yet done
+if [ -z ${PHYS_UTILS_DIR+x} ]; then
+  source ../setup.sh
+fi
+
 ## small helper function for slightly less typing
 ## execute command only if first passed argument is 1 or 1+1
 ## command is all but the first argument (making it possible to pass in arguments)
@@ -88,14 +93,10 @@ basicPlotJson=${PHYS_UTILS_DIR}/PolUtils/crossCheckGraphsBasic.json
 # base names
 refMapBase="cosThPhi_refMap" # the base name of the reference map histograms (NOTE: defined in runCreateRefMap.cc)
 corrMapBase="correctionMap" # the base name of the correction map histograms
-corrDataBase="costhphi" # base name of the data histograms used for correction map creation
-dataOutBase="corr_costhphi" # the base name for the corrected data histograms
+corrDataBase="raw_corr_costhphi" # base name of the data histograms used for correction map creation
+dataHistBase="raw_data_costhphi" # base name of the data histograms (i.e. the ones to be corrected)
+dataOutBase="data_corr_costhphi" # the base name for the corrected data histograms
 
-
-# check if the setup is done and do it if it's not yet done
-if [ -z ${PHYS_UTILS_DIR+x} ]; then
-  source ../setup.sh
-fi
 
 condExecute ${DO_BUILD} make -C ${PHYS_UTILS_DIR}/PolUtils -k all
 
@@ -136,15 +137,17 @@ condExecute ${CREATE_REF}+${MAKE_PLOTS} ${histPlotter} --histrgx="^"${refMapBase
 condExecute ${CREATE_REF}+${MAKE_PLOTS} ${refMapTest} --output=${plotDir} ${refMapsFile}
 
 ## create correction maps
-condExecute ${CREATE_CORR} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBJpsiKBase} --outputfile ${dataHistBJpsiKFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1 --nBinsPhi ${nBinsPhi} --nBinsCosTh ${nBinsCosTh}
+condExecute ${CREATE_CORR} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBJpsiKBase} --outputfile ${dataHistBJpsiKFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1 --nBinsPhi ${nBinsPhi} --nBinsCosTh ${nBinsCosTh} --histbase ${corrDataBase}
 condExecute ${CREATE_CORR} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${refMapBase} --output-base=${corrMapBase} --create-covmap ${normHistsCorrMapCreation} ${dataHistBJpsiKFile} ${refMapsFile} ${corrMapsFile}
 condExecute ${CREATE_CORR}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrMapsFile}
+condExecute ${CREATE_CORR}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${dataHistBJpsiKFile}
 
 ## apply to data (and fit results)
-condExecute ${CREATE_DATA} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBase} --outputfile ${dataHistFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1 --nBinsPhi ${nBinsPhi} --nBinsCosTh ${nBinsCosTh}
-condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base=${dataOutBase} --create-covmap ${normHistsResults} ${dataHistFile} ${corrMapsFile} ${corrDataFile}
+condExecute ${CREATE_DATA} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBase} --outputfile ${dataHistFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1 --nBinsPhi ${nBinsPhi} --nBinsCosTh ${nBinsCosTh} --histbase ${dataHistBase}
+condExecute ${CREATE_DATA} ${histDivider} --numerator-base="^"${dataHistBase} --denominator-base="^"${corrMapBase} --output-base=${dataOutBase} --create-covmap ${normHistsResults} ${dataHistFile} ${corrMapsFile} ${corrDataFile}
 condExecute ${FIT_DATA} ${histFitter} --histrgx="^"${dataOutBase} --graphbase="results" ${corrDataFile}
 condExecute ${CREATE_DATA}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${corrDataFile}
+condExecute ${CREATE_DATA}+${MAKE_PLOTS} ${histPlotter} --output-path=${plotDir} ${dataHistFile}
 
 ## make a sanity check by applying to the data which has originally be used
 condExecute ${SANITY_CHECK} ${histDivider} --numerator-base="^"${corrDataBase} --denominator-base="^"${corrMapBase} --output-base="cross_check" ${normHistResults} ${dataHistBJpsiKFile} ${corrMapsFile} ${crossCheckFile}
