@@ -47,7 +47,7 @@
         "xTitle": "p_{T}",
         "yTitle": "",
         "xRange": [10, 70],
-        "yRange": []
+        "yRange": [-1.1, 1.1]
     },
 
     "decoration":
