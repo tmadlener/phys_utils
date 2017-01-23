@@ -59,8 +59,8 @@ def getPlotTexOfSection(section, plots):
         "the maps that get fitted to obtain the result $\\lambda$ parameters.",
         "covmaps": "Comparison of coverage between correction map and data histograms "
         "to which the correction maps are applied. Color coding: $+1$ - Filled in the "
-        "data histogram but not in the correction map, $-1$ - Filled in the correction "
-        "map but not in the data histogram, $0$ - Filled in both, $-2$ - filled in "
+        "data histogram but not in the correction map, $2$ - Filled in the correction "
+        "map but not in the data histogram, $3$ - Filled in both, $0$ - filled in "
         "neither.",
         "graphs": "Sanity check and results: Fitted $\\lambda$ values for different "
         "maps/histograms: reference - $\\lambda$ values injected into the reference map, "

@@ -116,17 +116,17 @@ def getCoverage(h, g, i, j):
     """
     Check if bin (i,j) in histograms h and g are filled
 
-    Bins that are filled in h but not in g, get assigned +1, respectively bins that are filled in h
-    but not in g get assigned -1. Bins that are filled in both are assigned 0, bins that are filed
-    in neither are assigned -2.
+    Bins that are filled in h but not in g, get assigned +1, respectively bins that are filled in g
+    but not in h get assigned +2. Bins that are filled in both are assigned 3, bins that are filed
+    in neither are assigned 0.
     """
     hCont = h.GetBinContent(i,j) # need no errors for this
     gCont = g.GetBinContent(i,j)
 
-    if hCont > 0 and gCont > 0: return 0
-    if hCont == 0 and gCont == 0: return -2
+    if hCont > 0 and gCont > 0: return 3
+    if hCont == 0 and gCont == 0: return 0
     if hCont > 0 and gCont == 0: return 1
-    if hCont == 0 and gCont > 0: return -1
+    if hCont == 0 and gCont > 0: return 2
 
     print("getCoverage fell through all cases it can handle with values {} and {}. This should not happen."
           "Maybe something is wrong with the inputs?".format(hCont, gCont))
