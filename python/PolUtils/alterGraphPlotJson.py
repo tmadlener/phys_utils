@@ -4,21 +4,7 @@ import argparse
 import json
 import os
 
-def sanitizeInputFileNames(inputfiles):
-    """
-    Sanitize the input file name list (of lists) so that every file has a legend entry (empty)
-    Merges all but the first entry in each list into one string that is then used as legend entry
-    """
-    for inf in inputfiles:
-        n = len(inf)
-        if n > 2:
-            inf[1] = " ".join(inf[1:])
-            del inf[-(n-2):]
-        if n < 2:
-            inf.append("")
-
-    return inputfiles
-
+from utils.miscHelpers import sanitizeInputFileNames
 
 """
 Argparse

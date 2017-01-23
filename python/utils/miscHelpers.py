@@ -105,5 +105,21 @@ def getRapPtLbl(rapBin, rapBinning, ptBin, ptBinning):
     ptMin = ptBinning[ptBin - 1]
     ptMax = ptBinning[ptBin]
 
-    return "".join(["$", str(rapMin), " < |y| < ", str(rapMax), ", ", 
+    return "".join(["$", str(rapMin), " < |y| < ", str(rapMax), ", ",
                     str(ptMin), " < p_{T} < ", str(ptMax), "$"])
+
+
+def sanitizeInputFileNames(inputfiles):
+    """
+    Sanitize the input file name list (of lists) so that every file has a legend entry (defaults to empty)
+    Merges all but the first entry in each list into one string that is then used as legend entry
+    """
+    for inf in inputfiles:
+        n = len(inf)
+        if n > 2:
+            inf[1] = " ".join(inf[1:])
+            del inf[-(n-2):]
+        if n < 2:
+            inf.append("")
+
+    return inputfiles

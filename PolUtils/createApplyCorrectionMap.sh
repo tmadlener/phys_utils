@@ -81,23 +81,27 @@ function cleanLatex() {
   cd ${cwd}
 }
 
-sample_input=even
-sample_data=odd
+# sample_input=odd
+# sample_data=even
 
 nBinsPhi=16
 nBinsCosTh=32
+nFit=3
 
 ## inputs:
 # file where the raw B to J/Psi K data is stored (needed for reference lambdas)
-rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}/selEvents_data.root
+# rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_input}/tmpFiles/selEvents_data.root
+rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins/tmpFiles/selEvents_data.root
 # base file name where the background subtracted B to J/Psi K data can be found
-bkgSubtrDataBJpsiKBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_input}/dataResults/data/results_Psi1S
+# bkgSubtrDataBJpsiKBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_input}/dataResults/data/results_Psi1S
+bkgSubtrDataBJpsiKBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins/dataResults/data/results_Psi1S
 # base file name where the background subtracted data costh phi values can be found
-# bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/AllJpsi/results/inclusive_jpsi_full_1rapBin/results_Fit_1_Psi1S
-bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_data}/dataResults/data/results_Psi1S
+bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/AllJpsi/results/inclusive_jpsi_full_1rapBin/results_Fit_${nFit}_Psi1S
+# bkgSubtrDataBase=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_data}/dataResults/data/results_Psi1S
 
 # output directory, where intermediately created files and results will be stored
-outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}_${nBinsCosTh}_${nBinsPhi}
+# outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_${sample_input}_${nBinsCosTh}_${nBinsPhi}
+outputDir=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/CorrectionMaps/mw_3_rap_1_seagulls_data_Fit_${nFit}_${nBinsCosTh}_${nBinsPhi}
 
 basicPlotJson=${PHYS_UTILS_DIR}/PolUtils/crossCheckGraphsBasic.json
 basicReportTex=${PHYS_UTILS_DIR}/Latex/PolUtils/reportCorrMapBase.tex
@@ -150,7 +154,7 @@ condExecute ${CREATE_REF} ${refMapCreator} --createmaps --fitmaps ${refLambdasJs
 ## to also have reference lambdas as TGraphAsymmErrors after fitting
 condExecute ${FIT_REF} ${histFitter} --histrgx="^"${refMapBase} --graphbase="reference" ${refMapsFile}
 condExecute ${CREATE_REF}+${MAKE_PLOTS} ${histPlotter} --histrgx="^"${refMapBase} --output-path=${plotDir} ${refMapsFile}
-condExecute ${CREATE_REF}+${MAKE_PLOTS} ${refMapTest} --output=${plotDir} ${refMapsFile}
+condExecute ${CREATE_REF}+${MAKE_PLOTS} ${refMapTest} --output=${plotDir} -i ${refMapsFile}
 
 ## create correction maps
 condExecute ${CREATE_CORR} ${cosThPhiHistCreator} --inputbase ${bkgSubtrDataBJpsiKBase} --outputfile ${dataHistBJpsiKFile} --ptMin 1 --ptMax 12 --rapMin 1 --rapMax 1 --nBinsPhi ${nBinsPhi} --nBinsCosTh ${nBinsCosTh} --histbase ${corrDataBase}
