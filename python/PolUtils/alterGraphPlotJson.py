@@ -11,8 +11,7 @@ Argparse
 """
 parser = argparse.ArgumentParser(description="script for auto-generating json files parseable by plotGraphs.py")
 parser.add_argument("outputJsonFile", help="path to the generated json file")
-parser.add_argument("baseJsonFile", help="basic json file to be adapted",
-                    nargs="?", default=os.path.join(os.environ["PHYS_UTILS_DIR"], "python/PolUtils/basicPlots.json"))
+parser.add_argument("baseJsonFile", help="basic json file to be adapted")
 parser.add_argument("--inputfile", "-i", help="add input file to be used (filename + leg entry)",
                     nargs="+", dest="inputfiles", action="append")
 # parser.add_argument("--graphs", "-g", help="graph (names + additional leg entry) to be plotted (if present in input files)",
