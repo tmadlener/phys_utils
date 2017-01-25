@@ -193,11 +193,13 @@ Collect Graphs from file
 graphList = dict()
 for fn in json['inputfiles']:
     f = r.TFile.Open(fn[0]) # the 0 element contains the full path to the filename
-    gColl = GraphCollector()
-    recurseOnFile(f, gColl, lambda d: gColl.setPath(d))
+    # only try to collect plots when the file exists (TFile::Open() emits a warning if not)
+    if f:
+        gColl = GraphCollector()
+        recurseOnFile(f, gColl, lambda d: gColl.setPath(d))
 
-    graphList[fn[1]] = gColl.getDict()
-    f.Close()
+        graphList[fn[1]] = gColl.getDict()
+        f.Close()
 
 # if a 'global' yTitle is set, use it for every plot, else take the yTitle from each plot
 globYTitle = json["axes"]["yTitle"]
