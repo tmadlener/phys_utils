@@ -8,7 +8,7 @@ import math
 import argparse
 from functools import partial
 
-from utils.recurse import collectHistograms
+from utils.recurse import collectHistograms, TH2DCollector
 from utils.TH2D_utils import divide2D, compareCoverage
 from utils.miscHelpers import getRapPtStr
 
@@ -87,8 +87,8 @@ gROOT.SetBatch()
 numF = TFile.Open(args.numeratorFile)
 denomF = TFile.Open(args.denominatorFile)
 
-numHists = collectHistograms(numF, args.numeratorBase)
-denomHists = collectHistograms(denomF, args.denominatorBase)
+numHists = collectHistograms(numF, args.numeratorBase, TH2DCollector)
+denomHists = collectHistograms(denomF, args.denominatorBase, TH2DCollector)
 
 outputF = TFile(args.outputFile, "recreate")
 if args.divideHists:

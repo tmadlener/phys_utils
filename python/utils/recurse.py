@@ -58,11 +58,19 @@ class TH2DCollector(ObjectCollector):
         ObjectCollector.__init__(self, rgx, "TH2D")
 
 
-def collectHistograms(f, basename):
+class TH1DCollector(ObjectCollector):
     """
-    Collect all TH2Ds from TFile f, whose name matches basename and return them in a dict
-    with the names as the keys and the TH2Ds as value
+    Collector object to collect all TH1Ds froma  given file into a dict
     """
-    hColl = TH2DCollector(basename)
+    def __init__(self, rgx):
+        ObjectCollector.__init__(self, rgx, "TH1D")
+
+
+def collectHistograms(f, basename, coll):
+    """
+    Collect all objects specified by coll  from TFile f, whose name matches basename and
+    return them in a dict with the names as the keys and the objects as value
+    """
+    hColl = coll(basename)
     recurseOnFile(f, hColl)
     return hColl.objects
