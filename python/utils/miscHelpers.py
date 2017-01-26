@@ -1,4 +1,5 @@
 import os
+import re
 
 def condMkDir(path):
     """
@@ -83,17 +84,22 @@ def getRapPtStr(fullName):
     """
     Get the rapX_ptY ending of the full name where, all characters are lower cased
     """
-    strList = fullName.lower().split("_")
-    return "_".join([strList[-2], strList[-1]])
+    [rap, pt] = getRapPt(fullName)
+    return "_".join(["rap" + str(rap), "pt" + str(pt)])
 
 
 def getRapPt(fullName):
     """
-    Get the numerical values of the pt and rapidity bin (after removing anything after the first dot)
-    NOTE: assumes that this follows the convention that rapX_ptY are always at the end of the full name
+    Get the numerical values of the pt and rapidity bin by matching a regex against the
+    passed full name.
     """
-    strList = fullName.partition(".")[0].lower().split("_")
-    return[int(strList[-2][3:]), int(strList[-1][2:])]
+    rapPtRgx = r"[Rr][Aa][Pp]_?([0-9]+)_[Pp][Tt]_?([0-9]+)"
+    m = re.search(rapPtRgx, fullName)
+    if m:
+        return[int(m.group(1)), int(m.group(2))]
+
+    print("Couldn't match regex to find rap and pt bin in \'{}\'".format(fullName))
+    return [0, 0]
 
 
 def getRapPtLbl(rapBin, rapBinning, ptBin, ptBinning):
