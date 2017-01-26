@@ -2,9 +2,9 @@
 
 import argparse
 
-from utils.recurse import collectHistograms
-from utils.miscHelpers import filterDict, getRapPt
-from utils.TGraph_utils import createGraph
+from utils.recurse import collectHistograms, TH2DCollector
+from utils.miscHelpers import getRapPt
+from utils.Fit_utils import createRapGraph
 
 def fitAngularDistribution(h):
     """Fit the angular distribution function to the histogram"""
@@ -16,11 +16,13 @@ def fitAngularDistribution(h):
             -1.0, 1.0, -180.0, 180.0)
     W.SetParameters(1.0, 0.0, 0.0, 0.0)
 
-    h.Fit(W)
+    fitRlt = h.Fit(W, "S")
+    fitRlt.SetName("_".join([h.GetName(), "Wcosthphi_rlt"]))
+    fitRlt.Write()
 
-    return {"lth": [W.GetParameter(1), W.GetParError(1)],
-            "lph": [W.GetParameter(2), W.GetParError(2)],
-            "ltp": [W.GetParameter(3), W.GetParError(3)]}
+    return {"lth": [fitRlt.Parameter(1), fitRlt.Error(1)],
+            "lph": [fitRlt.Parameter(2), fitRlt.Error(2)],
+            "ltp": [fitRlt.Parameter(3), fitRlt.Error(3)]}
 
 
 def collectLambdas(hists):
@@ -33,32 +35,6 @@ def collectLambdas(hists):
         lambdas[name] = fitAngularDistribution(h)
 
     return lambdas
-
-
-def getValuesFromDict(valDict, rapBin, lam, idx):
-    """
-    TODO: documentation
-    GOAL: given a dict of dict (i.e. what's returned by collectLambdas) return a list of double values
-    idx - 0 for params, 1 for param errors
-    """
-    rapDict = filterDict(valDict, "rap" + str(rapBin)) # get only values for the current rap bin
-    def getKey(it): # sort dict according to the pt bin
-        return getRapPt(it)[1]
-
-    return [rapDict.get(k)[lam][idx] for k in sorted(rapDict, key=getKey)]
-
-
-def createRapGraph(lambdas, rapBin, lam, ptBinning):
-    """
-    Create the TGraphAsymmErrors of one lambda parameter in one rapidity bin
-    """
-    binCenters = [0.5*(ptBinning[i+1] + ptBinning[i]) for i in range(0, len(ptBinning) - 1)]
-    binErrors = [0.5*(ptBinning[i+1] - ptBinning[i]) for i in range(0, len(ptBinning) - 1)]
-
-    lamVals = getValuesFromDict(lambdas, rapBin, lam, 0)
-    lamErrs = getValuesFromDict(lambdas, rapBin, lam, 1)
-
-    return createGraph(binCenters, lamVals, binErrors, binErrors, lamErrs, lamErrs)
 
 
 def createAndStoreGraphs(lambdas, baseName):
@@ -95,11 +71,11 @@ args = parser.parse_args()
 """
 Script
 """
-from ROOT import TFile, TH2D, TGraphAsymmErrors, TF2, gROOT
+from ROOT import TFile, TH2D, TGraphAsymmErrors, TF2, gROOT, TFitResult
 gROOT.SetBatch()
 
 inputF = TFile.Open(args.histFile, "update")
-histsToFit = collectHistograms(inputF, args.histRgx)
+histsToFit = collectHistograms(inputF, args.histRgx, TH2DCollector)
 lambdas = collectLambdas(histsToFit)
 
 createAndStoreGraphs(lambdas, args.graphBase)
