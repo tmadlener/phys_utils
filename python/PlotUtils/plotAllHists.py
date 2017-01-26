@@ -3,7 +3,7 @@
 import argparse
 import re
 from utils.recurse import recurseOnFile
-from utils.TH2D_utils import drawTH2DColMap
+from utils.TH2D_utils import drawTH2DColMap, drawTH2DErrColMap
 
 class HistSaverIfMatch(object):
     """Functor for saving all (toplevel) histograms in a TFile."""
@@ -23,9 +23,13 @@ class HistSaverIfMatch(object):
         if obj.InheritsFrom("TH1") and self.rgx.search(obj.GetName()):
             self.can.Clear()
             self.can.cd()
+            self.can.SetLogz(logColAxis)
             obj.SetStats(False)
             if obj.InheritsFrom("TH2"):
                 drawTH2DColMap(obj, self.can)
+
+                if draw2DRelErrMap:
+                    drawTH2DErrColMap(obj, self.can)
             else:
                 obj.Draw()
 
@@ -43,10 +47,17 @@ parser.add_argument("--output-path", "-o", help="Path to which the created files
                     dest="outPath", action="store")
 parser.add_argument("--extension", "-e", help="Extension to be used for storing plots (default = .pdf)",
                     dest="extension", action="store")
+parser.add_argument("--draw-relerrmap", "-re", help="Draw 2D map of relative bin errors",
+                    dest="drawRelErr", action="store_true", default=False)
+parser.add_argument("--set-logcol", "-lc", help="Set colro axis to logarithmic",
+                    dest="logCol", action="store_true", default=False)
 
 parser.set_defaults(histRgx="", outPath="./", extension=".pdf")
 args = parser.parse_args()
 
+# use some global variables here
+draw2DRelErrMap = args.drawRelErr
+logColAxis = args.logCol
 
 """
 Script

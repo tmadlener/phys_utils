@@ -136,10 +136,10 @@ def getCoverage(h, g, i, j):
 def printTH2D(h):
     """Print the TH2D as an NxM matrix, directly to the screen"""
     print("Contents of: {}, ({} x {})".format(h.GetName(), h.GetNbinsX(), h.GetNbinsY()))
-    for i in range(0, h.GetNbinsX() + 2):
+    for i in range(0, h.GetNbinsY() + 2):
         row = []
-        for j in range(0, h.GetNbinsY() + 2):
-            row.append(h.GetBinContent(i,j))
+        for j in range(0, h.GetNbinsX() + 2):
+            row.append(h.GetBinContent(j,i))
         print(" ".join(str(v) for v in row))
 
 
@@ -158,3 +158,21 @@ def drawTH2DColMap(h, c):
     p.SetX2NDC(0.89)
     gPad.Modified()
     gPad.Update()
+
+
+def drawTH2DErrColMap(h, c):
+    """
+    Draw the relative errors of a TH2D as color map
+    NOTE: this modifies the passed histogram
+    """
+    eh = h.Clone()
+    for i in range(0, eh.GetNbinsX() + 2):
+        for j in range(0, eh.GetNbinsY() + 2):
+            con = eh.GetBinContent(i, j)
+            if con > 0:
+                h.SetBinContent(i, j, eh.GetBinError(i, j) / con)
+            else:
+                h.SetBinContent(i, j, 0)
+
+    h.SetName("_".join([h.GetName(), "relErr"]))
+    drawTH2DColMap(h, c)
