@@ -9,7 +9,7 @@ import argparse
 from functools import partial
 
 from utils.recurse import collectHistograms, TH2DCollector
-from utils.TH2D_utils import divide2D, compareCoverage
+from utils.TH_utils import divide2D, compareCoverage
 from utils.miscHelpers import getRapPtStr
 
 def divideHistograms(numHists, denomHists, func = divide2D, algoName = ""):

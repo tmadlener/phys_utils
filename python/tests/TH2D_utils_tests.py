@@ -3,7 +3,7 @@
 import unittest
 from math import sqrt
 
-from utils.TH2D_utils import *
+from utils.TH_utils import *
 from ROOT import TH2D
 
 """

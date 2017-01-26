@@ -3,7 +3,7 @@
 import argparse
 import re
 from utils.recurse import recurseOnFile
-from utils.TH2D_utils import drawTH2DColMap, drawTH2DErrColMap
+from utils.TH_utils import drawTH2DColMap, drawTH2DErrColMap
 
 class HistSaverIfMatch(object):
     """Functor for saving all (toplevel) histograms in a TFile."""
@@ -31,7 +31,7 @@ class HistSaverIfMatch(object):
                 if draw2DRelErrMap:
                     drawTH2DErrColMap(obj, self.can)
             else:
-                obj.Draw()
+                obj.Draw("E1LP")
 
             self.can.SaveAs("".join([self.path, obj.GetName(), self.ext]))
 
