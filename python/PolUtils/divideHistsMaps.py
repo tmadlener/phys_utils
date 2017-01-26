@@ -8,20 +8,23 @@ import math
 import argparse
 from functools import partial
 
-from utils.recurse import collectHistograms, TH2DCollector
-from utils.TH_utils import divide2D, compareCoverage
-from utils.miscHelpers import getRapPtStr
+from utils.recurse import collectHistograms, TH2DCollector, TH1DCollector
+from utils.TH_utils import divide2D, compareCoverage, divide1D
+from utils.miscHelpers import getRapPtStr, getRapPt, removeRapPt, filterDict, filterDictNot
 
 def divideHistograms(numHists, denomHists, func = divide2D, algoName = ""):
     """
-    Divide all numHists by the denomHists based on their name endings
+    Divide all numHists by the denomHists based on their (rap, pt) info
     """
     ratios = {}
     for (denomN, denomH) in denomHists.iteritems():
-        rapPt = getRapPtStr(denomN)
-        numH = [h for n, h in numHists.items() if n.lower().endswith(rapPt)]
+        rapPt = getRapPt(denomN)
+        # get the list of all numerator candidates the have the same rap and pt bin
+        # this should be enough for disambiguation, otherwise you have to filter before
+        numH = [h for n, h in numHists.items() if rapPt == getRapPt(n)]
         if len(numH) == 1:
-            ratioN = "_".join([algoName, numH[0].GetName().replace(rapPt, ""), "", denomN.replace(rapPt, ""), rapPt])
+            ratioN = "_".join([algoName, removeRapPt(numH[0].GetName()), "",
+                               removeRapPt(denomN), getRapPtStr(denomN)])
             if ratioN in ratios:
                 print("WARNING: {} already present in ratios. Replacing it.".format(ratioN))
             ratios[ratioN] = func(numH[0], denomH, ratioN)
@@ -87,6 +90,7 @@ gROOT.SetBatch()
 numF = TFile.Open(args.numeratorFile)
 denomF = TFile.Open(args.denominatorFile)
 
+# first process all the TH2Ds in the file
 numHists = collectHistograms(numF, args.numeratorBase, TH2DCollector)
 denomHists = collectHistograms(denomF, args.denominatorBase, TH2DCollector)
 
@@ -102,6 +106,30 @@ if args.createCovMap:
     if args.outputBase:
         ofbase = "_".join(["covmap", args.outputBase])
     storeRatioHists(outputF, covMaps, ofbase)
+
+
+# now do the TH1Ds
+numHists = collectHistograms(numF, args.numeratorBase, TH1DCollector)
+denomHists = collectHistograms(denomF, args.denominatorBase, TH1DCollector)
+
+# TODO:
+# * geared towards costh and phi projection usage -> make this a bit more versatile
+
+# process the _phi_ and _costh_ histograms explicitly here
+for proj in ["costh", "phi"]:
+    projRgx = r"_" + proj + r"(_|$)"
+    ratioHists = divideHistograms(filterDict(numHists, projRgx),
+                                  filterDict(denomHists, projRgx),
+                                  divide1D, "ratio")
+    storeRatioHists(outputF, ratioHists,
+                    "_".join([args.outputBase, proj]))
+
+costhphiRgx = r"_(costh|phi)(_|$)"
+# Filter out all previously stored histograms and process them now
+ratioHists = divideHistograms(filterDictNot(numHists, costhphiRgx),
+                              filterDictNot(denomHists, costhphiRgx),
+                                            divide1D, "ratio")
+storeRatioHists(outputF, ratioHists, args.outputBase)
 
 
 outputF.Close()

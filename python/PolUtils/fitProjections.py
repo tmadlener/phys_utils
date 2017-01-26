@@ -42,11 +42,10 @@ def collectLambdas(hists):
     as the histograms
     """
     lambdas = {}
-    for (name, h) in hists.iteritems():
-        if name.lower().endswith("_costh"):
-            lambdas[name] = fitWcosTheta(h)
-        if name.lower().endswith("_phi"):
-            lambdas[name] = fitWPhi(h)
+    for (name, h) in filterDict(hists, "_costh(_|$)").iteritems():
+        lambdas[name] = fitWcosTheta(h)
+    for (name, h) in filterDict(hists, "_phi(_|$)").iteritems():
+        lambdas[name] = fitWPhi(h)
 
     return lambdas
 
@@ -58,8 +57,8 @@ def createAndStoreGraphs(lambdas, baseName):
     ptBinning = [10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 50, 70]
 
     # filter the dictionary first for "_phi" resp. "_costh"
-    phiLambdas = filterDict(lambdas, "_phi")
-    costhLambdas = filterDict(lambdas, "_costh")
+    phiLambdas = filterDict(lambdas, "_phi(_|$)")
+    costhLambdas = filterDict(lambdas, "_costh(_|$)")
 
     for rapBin in set([getRapPt(k)[0] for (k,v) in phiLambdas.iteritems()]):
         rapStr = "rap" + str(rapBin)
@@ -82,7 +81,7 @@ parser.add_argument('histFile', help="File containing the histograms to be fit")
 parser.add_argument('-hr', '--histrgx', help="Regex the histograms have to match to be fitted",
                     dest="histRgx", action="store", default="")
 parser.add_argument("--graphbase", "-g", help="Base name for the created graphs.",
-                    dest="graphBase", action="store", default"proj_fit")
+                    dest="graphBase", action="store", default="proj_fit")
 
 args = parser.parse_args()
 
@@ -95,6 +94,6 @@ gROOT.SetBatch()
 inputF = TFile.Open(args.histFile, "update")
 projections = collectHistograms(inputF, args.histRgx, TH1DCollector)
 
-createAndStoreGraphs(collectLambdas(projections), "test")
+createAndStoreGraphs(collectLambdas(projections), args.graphBase)
 
 inputF.Close()

@@ -67,9 +67,16 @@ def mergeDicts(*dicts):
 
 def filterDict(d, key):
     """
-    Filter a dictionary to contain only keys matching key (string only currently)
+    Filter a dictionary to contain only keys matching key
     """
-    return {k: v for (k, v) in d.iteritems() if key in k}
+    return {k: v for (k, v) in d.iteritems() if re.search(key, k)}
+
+
+def filterDictNot(d, key):
+    """
+    Filter a dictionary to contain only keys that do not match key
+    """
+    return {k: v for (k, v) in d.iteritems() if not re.search(key, k)}
 
 
 def getAllFilesFromDir(directory, ext):
@@ -100,6 +107,15 @@ def getRapPt(fullName):
 
     print("Couldn't match regex to find rap and pt bin in \'{}\'".format(fullName))
     return [0, 0]
+
+
+def removeRapPt(fullName):
+    """
+    Remove the rapX_ptY info from the fullName and return a new string
+    """
+    [rap, pt] = getRapPt(fullName)
+    rapPtBinRgx = r"".join([r"[Rr][Aa][Pp]_?", str(rap), "_[Pp][Tt]_?", str(pt)])
+    return re.sub(rapPtBinRgx, "", fullName)
 
 
 def getRapPtLbl(rapBin, rapBinning, ptBin, ptBinning):

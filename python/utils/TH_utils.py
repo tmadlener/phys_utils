@@ -49,7 +49,7 @@ def divide2D(h, g, name = "", normalize = False, norm = 1):
             nBin = Bin(n.GetBinContent(i,j), n.GetBinError(i,j))
             dBin = Bin(d.GetBinContent(i,j), d.GetBinError(i,j))
             if dBin.cont <= 0:
-                if nBin > 0:
+                if nBin.cont > 0:
                     print("bin ({},{}) set to zero to avoid division by 0. "
                           "Numerator was {}".format(i, j, nBin.cont))
                 nBin = Bin(0, 0) # if denominator has no entries, also set the numerator to 0
@@ -62,6 +62,36 @@ def divide2D(h, g, name = "", normalize = False, norm = 1):
         n.SetName(name)
 
     return n
+
+
+def divide1D(h, g, name = ""):
+    """
+    Divide TH1D h by TH1D g.
+    """
+    n = h.Clone()
+    d = g.Clone()
+
+    if n.GetNbinsX() != d.GetNbinsX():
+        raise NotDivisable(h, g)
+
+    for i in range(0, n.GetNbinsX() + 2):
+        nBin = Bin(n.GetBinContent(i), n.GetBinError(i))
+        dBin = Bin(d.GetBinContent(i), d.GetBinError(i))
+        if dBin.cont <= 0:
+            if nBin.cont > 0:
+                print("bin {} set to zero to avoid division by 0. "
+                      "Numerator was {}".format(i, nBin.cont))
+            nBin = Bin(0, 0)
+        else:
+            nBin.divide(dBin)
+
+        nBin.setBin1D(n, i)
+
+    if name:
+        n.SetName(name)
+
+    return n
+
 
 class NotDivisable(Exception):
     """Exception raised when two histograms are not divisable"""
@@ -82,6 +112,9 @@ class Bin:
         if self.cont > 0:
             self.relErr2 = self.err**2 / self.cont**2
 
+    def __repr__(self):
+        return "{} +/- {}, relErr2 = {}".format(self.cont, self.err, self.relErr2)
+
     def divide(self, otherBin):
         """Divide this bin by the otherBin with proper error propagation without handling division by 0!"""
         self.cont = self.cont / otherBin.cont
@@ -89,9 +122,14 @@ class Bin:
         self.err = sqrt(self.relErr2) * self.cont
 
     def setBin(self, h, i, j):
-        """Set bin to the histogram passed histogram"""
+        """Set bin to the passed histogram (TH2D)"""
         h.SetBinContent(i,j, self.cont)
         h.SetBinError(i,j, self.err)
+
+    def setBin1D(self, h, i):
+        """Set bin to the passed histogram (TH1D)"""
+        h.SetBinContent(i, self.cont)
+        h.SetBinError(i, self.err)
 
 
 def compareCoverage(h, g, name = ""):
