@@ -44,8 +44,8 @@ private:
 
   /**
    * get the argument from the map and indicate the succes with the .first of the returned pair.
-   * Specialized for std::string and std::vector<std::string>, all basic types supported as long as they
-   * can be converted by convertArg.
+   * Plain T and vector<T> supported for all basic types and std::string.
+   * Generally everything that can be converted by convertArg is supported.
    */
   template<typename T>
   std::pair<bool, T> getArg(const std::string& key) const;
@@ -53,9 +53,26 @@ private:
   /**
    * convert the argument into T and indicate succes with the .first of the returned pair.
    * Converts the string argument to the passed type (boolalpha for bools!). Should work for all basic types.
+   * Any type that should be supported has to provide operator>>() as conversion is from
+   * a string via a stringstream.
    */
   template<typename T>
   std::pair<bool, T> convertArg(const std::string& arg) const;
+
+  /**
+   * Specializing for T and vector<T> doesn't work without overloading, which is done here
+   * for the case of a simple T (all basic types and std::string supported).
+   */
+  template<typename T>
+  std::pair<bool, T> getArg_impl(const std::string& key, T*) const;
+
+  /**
+   * Specializing for T and vector<T> doesn't work without overloading, which is done here
+   * for the case of vector<T> (all basic types and std::string supported).
+   */
+  template<typename T>
+  std::pair<bool, std::vector<T> > getArg_impl(const std::string& key, std::vector<T>*) const;
+
 
   ParseMap m_argumentMap; /**< The internally used map for storing all flag value pairs. */
 };
@@ -117,9 +134,15 @@ T ArgParser::getOptionVal(const std::string& key, const T& defVal) const
   return args.second;
 }
 
+template<typename T>
+std::pair<bool, T> ArgParser::getArg(const std::string&  key) const
+{
+  return getArg_impl(key, static_cast<T*>(nullptr));
+}
+
 
 template<typename T>
-std::pair<bool, T> ArgParser::getArg(const std::string& key) const
+std::pair<bool, T> ArgParser::getArg_impl(const std::string& key, T*) const
 {
   auto keyIt = m_argumentMap.find(key);
   if (keyIt != m_argumentMap.end()) {
@@ -133,8 +156,9 @@ std::pair<bool, T> ArgParser::getArg(const std::string& key) const
   return {false, T{}};
 }
 
+
 template<>
-std::pair<bool, std::string> ArgParser::getArg(const std::string& key) const
+std::pair<bool, std::string> ArgParser::getArg_impl(const std::string& key, std::string*) const
 {
   auto keyIt = m_argumentMap.find(key);
   if (keyIt != m_argumentMap.end()) {
@@ -144,8 +168,35 @@ std::pair<bool, std::string> ArgParser::getArg(const std::string& key) const
   return {false, ""};
 }
 
+
+template<typename T>
+std::pair<bool, std::vector<T> > ArgParser::getArg_impl(const std::string& key, std::vector<T>*) const
+{
+  std::vector<T> optVals;
+  auto keyItRange = m_argumentMap.equal_range(key);
+
+  const auto parseFunc = [&optVals,this] (const ParseMap::value_type& x) {
+    const auto arg = convertArg<T>(x.second);
+    if (arg.first) optVals.push_back(arg.second);
+  };
+
+  // first try to collect everything, then check if the number of collected values
+  // matches the number of values to be collected
+  std::for_each(keyItRange.first, keyItRange.second, parseFunc);
+
+  // NOTE: the not so subtle c-style cast in front of std::distance to suppress a Wsign-compare
+  if ((size_t)std::distance(keyItRange.first, keyItRange.second) != optVals.size()) {
+    std::cerr << "Couldn't convert list of arguments to vector of " << typeid(T).name()
+              << " for key \'" << key << "\'" << std::endl;
+    return {false, optVals};
+  }
+
+  // simply set boolean to false if vector empy. In this way, no conversion error is printed
+  return {!optVals.empty(), optVals};
+}
+
 template<>
-std::pair<bool, std::vector<std::string> > ArgParser::getArg(const std::string& key) const
+std::pair<bool, std::vector<std::string> > ArgParser::getArg_impl(const std::string& key, std::vector<std::string>*) const
 {
   std::vector<std::string> optionVals;
   auto keyItRange = m_argumentMap.equal_range(key);
