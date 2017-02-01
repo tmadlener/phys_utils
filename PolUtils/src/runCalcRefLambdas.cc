@@ -1,5 +1,7 @@
 #include "general/ArgParser.h"
 #include "general/progress.h"
+#include "general/vector_helper.h"
+
 
 #include "root_utils.h"
 #include "misc_utils.h"
@@ -16,16 +18,34 @@
 #include <cmath> // abs, sqrt, cos, sin
 #include <sstream>
 
-// some hardcoded stuff.
-// TODO: move this somewhere else
-static constexpr size_t nPtBins = 12;
-static constexpr size_t nRapBins = 1;
-static constexpr std::array<double, nPtBins + 1> ptBinning = {
-  10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 25.0, 30.0, 35.0, 40.0, 50.0, 70.0
-};
-static constexpr std::array<double, nRapBins + 1> rapBinning = {
-  0.0, 1.2
-};
+/** create an NxM array of (empty) vector<double> */
+std::vector<std::vector<std::vector<double> > > createArray(const size_t N, const size_t M)
+{
+  using Vec = std::vector<double>;
+  using VecVec = std::vector<Vec>;
+
+  std::vector<VecVec> array;
+  for (size_t i = 0; i < N; ++i) {
+    VecVec innerArray;
+    for (size_t j = 0; j < M; ++j) {
+      innerArray.push_back(Vec{});
+    }
+    array.push_back(innerArray);
+  }
+  return array;
+}
+
+/**
+ * The ArgParser::getOptionVal<std::vector<double>>() does not return the values in any
+ * guaranteed order, so sert them ascending.
+ */
+std::vector<double> getBinning(const ArgParser& p, const std::string& k)
+{
+  auto binning = p.getOptionVal<std::vector<double> >(k);
+  std::sort(binning.begin(), binning.end());
+
+  return binning;
+}
 
 // TODO: split up this monolithic block into a collection and a calculation part
 #ifndef __CINT__
@@ -35,6 +55,8 @@ int main(int argc, char *argv[])
   const auto infile = parser.getOptionVal<std::string>("--input");
   const auto outfile = parser.getOptionVal<std::string>("--output");
   const auto jsonfile = parser.getOptionVal<std::string>("--jsonoutput");
+  const auto ptBinning =  getBinning(parser, "--ptBinning");
+  const auto rapBinning = getBinning(parser, "--rapBinning");
 
   TFile* fin = checkOpenFile(infile);
   TTree* tin = checkGetFromFile<TTree>(fin, "selectedData"); // treename hardcoded at the moment
@@ -43,10 +65,13 @@ int main(int argc, char *argv[])
   tin->SetBranchAddress("JpsiP", &jpsi);
   tin->SetBranchAddress("BplusP", &B);
 
-  std::array<std::array<std::vector<double>, nPtBins>, nRapBins> cosTh2; // cosTheta^2
-  std::array<std::array<std::vector<double>, nPtBins>, nRapBins> sinTh2Cos2Phi; // sinTheta^2 * cos(2 Phi)
-  std::array<std::array<std::vector<double>, nPtBins>, nRapBins> sin2ThCosPhi; // sin(2 Theta) * cosPhi
-  std::array<std::array<std::vector<double>, nPtBins>, nRapBins> pT;
+  const auto nRapBins = rapBinning.size() - 1;
+  const auto nPtBins = ptBinning.size() - 1;
+
+  auto cosTh2 =  createArray(nRapBins, nPtBins) ; // cosTheta^2
+  auto sinTh2Cos2Phi = createArray(nRapBins, nPtBins) ; // sinTheta^2 * cos(2 Phi)
+  auto sin2ThCosPhi = createArray(nRapBins, nPtBins) ; // sin(2 Theta) * cosPhi
+  auto pT = createArray(nRapBins, nPtBins) ;
 
   unsigned overflowEvts{}; // evts that did not fit into the binning
   const auto nEntries = tin->GetEntries();

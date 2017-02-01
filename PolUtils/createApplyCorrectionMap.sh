@@ -88,6 +88,9 @@ nBinsPhi=16
 nBinsCosTh=32
 nFit=3
 
+ptBinning="10 12 14 16 18 20 22 25 30 35 40 50 70"
+rapBinning="0 1.2"
+
 ## inputs:
 # file where the raw B to J/Psi K data is stored (needed for reference lambdas)
 # rawDataInput=/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/ReferenceMapCreation/Seagulls/MassWindow_3sigma_1rapBins_${sample_input}/tmpFiles/selEvents_data.root
@@ -149,7 +152,7 @@ mkdir -p ${plotDir}
 
 
 ## create the reference maps from the json file (after calculating them from data)
-condExecute ${CREATE_REF} ${refLambdasCalc} --input ${rawDataInput} --output ${refLambdasRoot} --jsonoutput ${refLambdasJson}
+condExecute ${CREATE_REF} ${refLambdasCalc} --input ${rawDataInput} --output ${refLambdasRoot} --jsonoutput ${refLambdasJson} --ptBinning ${ptBinning} --rapBinning ${rapBinning}
 condExecute ${CREATE_REF} ${refMapCreator} --createmaps --fitmaps ${refLambdasJson} ${refMapsFile} --nBinsPhi=${nBinsPhi} --nBinsCosTh=${nBinsCosTh}
 ## to also have reference lambdas as TGraphAsymmErrors after fitting
 condExecute ${FIT_REF} ${histFitter} --histrgx="^"${refMapBase} --graphbase="reference" ${refMapsFile}
