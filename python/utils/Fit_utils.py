@@ -25,3 +25,19 @@ def getValuesFromDict(valDict, rapBin, lam, idx):
         return getRapPt(it)[1]
 
     return [rapDict.get(k)[lam][idx] for k in sorted(rapDict, key=getKey)]
+
+
+def createAndStoreGraphs(lambdas, baseName, ptBinning,
+                         parameters=["lth", "lph", "ltp"], f=None):
+    """
+    Create TGraphAsymmErrors from the passed lambda values
+    """
+    if f:
+        f.cd()
+
+    for rapBin in set([getRapPt(k)[0] for (k, v) in lambdas.iteritems()]):
+        rapStr = "rap" + str(rapBin)
+        for lam in parameters:
+            graph = createRapGraph(lambdas, rapBin, lam, ptBinning)
+            graph.SetName("_".join([baseName, lam, rapStr]))
+            graph.Write()

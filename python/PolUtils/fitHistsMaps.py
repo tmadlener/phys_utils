@@ -4,7 +4,7 @@ import argparse
 
 from utils.recurse import collectHistograms, TH2DCollector
 from utils.miscHelpers import getRapPt
-from utils.Fit_utils import createRapGraph
+from utils.Fit_utils import createAndStoreGraphs
 
 def fitAngularDistribution(h):
     """Fit the angular distribution function to the histogram"""
@@ -14,9 +14,11 @@ def fitAngularDistribution(h):
             "+ [3]*2*x[0]*sqrt(1-x[0]*x[0])*cos(x[1]*0.0174532925)"
             ")",
             -1.0, 1.0, -180.0, 180.0)
+            # -0.8, 0.8, -180.0, 180.0) # TESTING
     W.SetParameters(1.0, 0.0, 0.0, 0.0)
 
     fitRlt = h.Fit(W, "S")
+    # fitRlt = h.Fit(W, "SR") # TESTING
     fitRlt.SetName("_".join([h.GetName(), "Wcosthphi_rlt"]))
     fitRlt.Write()
 
@@ -37,22 +39,6 @@ def collectLambdas(hists):
     return lambdas
 
 
-def createAndStoreGraphs(lambdas, baseName):
-    """
-    Create TGraphAsymmErrors from the passed lambda values
-    """
-    # TODO: make this more flexible
-    ptBinning = [10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 50, 70]
-
-    for rapBin in set([getRapPt(k)[0] for (k, v) in lambdas.iteritems()]):
-        rapStr = "rap" + str(rapBin)
-        for lam in ["lth", "lph", "ltp"]:
-            graph = createRapGraph(lambdas, rapBin, lam, ptBinning)
-            graph.SetName("_".join([baseName, lam, rapStr]))
-            graph.Write()
-
-
-
 """
 Argparse
 """
@@ -63,10 +49,13 @@ parser.add_argument("--histrgx", help="Regex the histogram names have to match t
                     dest="histRgx", action="store")
 parser.add_argument("--graphbase", help="Base name for the created graphs.",
                     dest="graphBase", action="store")
+parser.add_argument("--ptBinning", help="pt binning that should be used",
+                    dest="ptBinning", nargs="+", required=True)
 
 parser.set_defaults(histRgx="", graphBase="fitted")
 args = parser.parse_args()
 
+ptBinning = [float(v) for v in args.ptBinning]
 
 """
 Script
@@ -78,6 +67,6 @@ inputF = TFile.Open(args.histFile, "update")
 histsToFit = collectHistograms(inputF, args.histRgx, TH2DCollector)
 lambdas = collectLambdas(histsToFit)
 
-createAndStoreGraphs(lambdas, args.graphBase)
+createAndStoreGraphs(lambdas, args.graphBase, ptBinning, ["lth", "lph", "ltp"], inputF)
 
 inputF.Close()

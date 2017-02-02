@@ -1,10 +1,23 @@
 #!/usr/bin/env python
 
 import argparse
+import re
 
 from utils.recurse import collectHistograms, TH1DCollector
 from utils.miscHelpers import filterDict, getRapPt
-from utils.Fit_utils import createRapGraph
+from utils.Fit_utils import createAndStoreGraphs
+
+def fitWcosThetaPhi(hCosth, hPhi):
+    """
+    Fit the two 1D projections in two steps, by first fitting the costh projection to fix
+    lambda_theta and then fit the phi projection to get lambda_phi as well
+    """
+    lthRes = fitWcosTheta(hCosth)
+    lphRes = fitWPhi(hPhi, lthRes["lth"][0])
+
+    return {"lth" : lthRes["lth"],
+            "lph": lphRes["lph"]}
+
 
 def fitWcosTheta(h):
     """Fit the phi integrated angular distribution function to the histogram"""
@@ -20,20 +33,25 @@ def fitWcosTheta(h):
            "lth": [fitRlt.Parameter(1), fitRlt.Error(1)]}
 
 
-def fitWPhi(h):
+def fitWPhi(h, lth):
     """Fit the phi integrated angular distribution function to the histogram"""
     W = TF1("Wphi",
-            "[0]/(3+[1]) * (3+[1] + 2*[2]*cos(2*x[0]*0.0174532925))",
+            "[0]* (1 + [1] * cos(2*x[0]*0.0174532925))", # [1] is NOT lph!
             -180.0, 180.0)
-    W.SetParameters(1.0, 0.0, 0.0)
+    W.SetParameters(1.0, 0.0)
 
     fitRlt = h.Fit(W, "S")
     fitRlt.SetName("_".join([h.GetName(), "Wphi"]))
     fitRlt.Write()
 
+    # store kappa in list, since lph and its error are both calculated
+    # via factor 0.5 / (3 + lth) of kappa resp. its error
+    kappa = [fitRlt.Parameter(1), fitRlt.Error(1)]
+    lph = [0.5 * v / (3 + lth) for v in kappa]
+
     return {"N":   [fitRlt.Parameter(0), fitRlt.Error(0)],
-            "lth": [fitRlt.Parameter(1), fitRlt.Error(1)],
-            "lph": [fitRlt.Parameter(2), fitRlt.Error(2)]}
+            "lph": lph}
+
 
 def collectLambdas(hists):
     """
@@ -42,35 +60,16 @@ def collectLambdas(hists):
     as the histograms
     """
     lambdas = {}
-    for (name, h) in filterDict(hists, "_costh(_|$)").iteritems():
-        lambdas[name] = fitWcosTheta(h)
-    for (name, h) in filterDict(hists, "_phi(_|$)").iteritems():
-        lambdas[name] = fitWPhi(h)
+    for (nameCosTh, hCosth) in filterDict(hists, "_costh(_|$)").iteritems():
+        hPhi = [h for n, h in filterDict(hists, "_phi(_|$)").iteritems()
+                if getRapPt(nameCosTh) == getRapPt(n)]
+        if len(hPhi) == 1:
+            lambdas[re.sub("_costh(_|$)", "", nameCosTh)] = fitWcosThetaPhi(hCosth, hPhi[0])
+        else:
+            print("Could not get (unambiguous) numerator histogram for {}. Got {} possible "
+                  "candidates. Skipping this histogram.".format(nameCosth, len(numH)))
 
     return lambdas
-
-
-def createAndStoreGraphs(lambdas, baseName):
-    """
-    Create TGraphAsymmErrors from the passed lambda values
-    """
-    ptBinning = [10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 50, 70]
-
-    # filter the dictionary first for "_phi" resp. "_costh"
-    phiLambdas = filterDict(lambdas, "_phi(_|$)")
-    costhLambdas = filterDict(lambdas, "_costh(_|$)")
-
-    for rapBin in set([getRapPt(k)[0] for (k,v) in phiLambdas.iteritems()]):
-        rapStr = "rap" + str(rapBin)
-        graph = createRapGraph(phiLambdas, rapBin, "lph", ptBinning)
-        graph.SetName("_".join([baseName, "lph", rapStr]))
-        graph.Write()
-
-    for rapBin in set([getRapPt(k)[0] for (k,v) in costhLambdas.iteritems()]):
-        rapStr = "rap" + str(rapBin)
-        graph = createRapGraph(costhLambdas, rapBin, "lth", ptBinning)
-        graph.SetName("_".join([baseName, "lth", rapStr]))
-        graph.Write()
 
 
 """
@@ -82,8 +81,13 @@ parser.add_argument('-hr', '--histrgx', help="Regex the histograms have to match
                     dest="histRgx", action="store", default="")
 parser.add_argument("--graphbase", "-g", help="Base name for the created graphs.",
                     dest="graphBase", action="store", default="proj_fit")
+parser.add_argument("--ptBinning", help="pt binning that should be used",
+                    dest="ptBinning", nargs="+", required=True)
+
 
 args = parser.parse_args()
+
+ptBinning = [float(v) for v in args.ptBinning]
 
 """
 Script
@@ -94,6 +98,7 @@ gROOT.SetBatch()
 inputF = TFile.Open(args.histFile, "update")
 projections = collectHistograms(inputF, args.histRgx, TH1DCollector)
 
-createAndStoreGraphs(collectLambdas(projections), args.graphBase)
+createAndStoreGraphs(collectLambdas(projections), args.graphBase, ptBinning,
+                     ["lth", "lph"], inputF)
 
 inputF.Close()
