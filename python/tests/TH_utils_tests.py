@@ -4,7 +4,7 @@ import unittest
 from math import sqrt
 
 from utils.TH_utils import *
-from ROOT import TH2D
+from ROOT import TH2D, TH1D
 
 """
 Bin
@@ -32,13 +32,17 @@ class TestBinConstructor(TestBinTestCase):
 
 class TestBinDivide(TestBinTestCase):
     def runTest(self):
-        with self.assertRaises(ZeroDivisionError):
-            self.b.divide(self.c)
-
         self.f.divide(self.d)
         self.assertAlmostEqual(self.f.cont, 0.48) # 1.2 / 2.5 = 0.48
         self.assertAlmostEqual(self.f.relErr2, 0.9721) # (0.9 / 1.2) ^ 2 + (1.6 / 2.5) ^ 2 = 0.9721
         self.assertAlmostEqual(self.f.err, sqrt(0.9721) * 0.48)
+
+
+class TestBinDivideByZero(TestBinTestCase):
+    def runTest(self):
+        self.b.divide(self.c)
+        self.assertEqual(self.b.cont, 0)
+        self.assertEqual(self.b.err, 0)
 
 
 class TestBinSetBin(TestBinTestCase):
@@ -133,6 +137,63 @@ class TestDivide2DHoleIsZero(TestDivide2DTestCase):
         r = divide2D(self.h1, self.h2)
         self.assertEqual(r.GetBinContent(1,1), 0)
         self.assertEqual(r.GetBinError(1,1), 0)
+
+
+class TestDivide2DNotDivisable(TestDivide2DTestCase):
+    def runTest(self):
+        h = TH2D("","", 1,0,1,2,0,1)
+        with self.assertRaises(NotDivisable):
+            divide2D(self.g, h)
+
+"""
+divide1D
+"""
+class TestDivide1DTestCase(unittest.TestCase):
+    def setUp(self):
+        self.h = TH1D("h", "h", 3, 0, 10)
+        Bin(1, 0.5).setBin1D(self.h, 1)
+        Bin(2, 0.25).setBin1D(self.h, 2)
+        Bin(3, 1.0/9.0).setBin1D(self.h, 3)
+
+        self.g = TH1D("g", "g", 3, 0, 10)
+        Bin(3, 0.3).setBin1D(self.g, 1)
+        Bin(0, 0.2).setBin1D(self.g, 2)
+        Bin(2, 0.4).setBin1D(self.g, 3)
+
+
+class TestDivide1DSetName(TestDivide1DTestCase):
+    def runTest(self):
+        self.assertEqual(divide1D(self.h, self.g, "foo").GetName(), "foo")
+
+
+class TestDivide1DErrorPropagation(TestDivide1DTestCase):
+    def runTest(self):
+        r = divide1D(self.h, self.g)
+        self.assertAlmostEqual(r.GetBinError(1), 1.0/3.0 * sqrt(0.5**2 + (0.3/3)**2))
+        self.assertAlmostEqual(r.GetBinError(3), 3.0/2.0 * sqrt(1/27.0**2 + (0.2)**2))
+        # second bin is covered by other test!
+
+
+class TestDivide1DRatios(TestDivide1DTestCase):
+    def runTest(self):
+        r = divide1D(self.h, self.g)
+        self.assertAlmostEqual(r.GetBinContent(1), 1.0/3.0)
+        self.assertEqual(r.GetBinContent(3), 3.0/2.0)
+        # second bin covered by other test
+
+
+class TestDivide1DHoleIsZero(TestDivide1DTestCase):
+    def runTest(self):
+        r = divide1D(self.h, self.g)
+        self.assertEqual(r.GetBinContent(2), 0)
+        self.assertEqual(r.GetBinError(2), 0)
+
+
+class TestDivide1DNotDivisable(TestDivide1DTestCase):
+    def runTest(self):
+        f = TH1D("", "", 1, 0, 1)
+        with self.assertRaises(NotDivisable):
+            divide1D(self.h, f)
 
 
 if __name__ == "__main__":

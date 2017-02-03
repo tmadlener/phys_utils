@@ -48,14 +48,7 @@ def divide2D(h, g, name = "", normalize = False, norm = 1):
         for j in range(0, n.GetNbinsY() + 2):
             nBin = Bin(n.GetBinContent(i,j), n.GetBinError(i,j))
             dBin = Bin(d.GetBinContent(i,j), d.GetBinError(i,j))
-            if dBin.cont <= 0:
-                if nBin.cont > 0:
-                    print("bin ({},{}) set to zero to avoid division by 0. "
-                          "Numerator was {}".format(i, j, nBin.cont))
-                nBin = Bin(0, 0) # if denominator has no entries, also set the numerator to 0
-            else:
-                nBin.divide(dBin)
-
+            nBin.divide(dBin)
             nBin.setBin(n, i, j)
 
     if name:
@@ -77,14 +70,7 @@ def divide1D(h, g, name = ""):
     for i in range(0, n.GetNbinsX() + 2):
         nBin = Bin(n.GetBinContent(i), n.GetBinError(i))
         dBin = Bin(d.GetBinContent(i), d.GetBinError(i))
-        if dBin.cont <= 0:
-            if nBin.cont > 0:
-                print("bin {} set to zero to avoid division by 0. "
-                      "Numerator was {}".format(i, nBin.cont))
-            nBin = Bin(0, 0)
-        else:
-            nBin.divide(dBin)
-
+        nBin.divide(dBin)
         nBin.setBin1D(n, i)
 
     if name:
@@ -115,11 +101,27 @@ class Bin:
     def __repr__(self):
         return "{} +/- {}, relErr2 = {}".format(self.cont, self.err, self.relErr2)
 
+
     def divide(self, otherBin):
-        """Divide this bin by the otherBin with proper error propagation without handling division by 0!"""
-        self.cont = self.cont / otherBin.cont
-        self.relErr2 = self.relErr2 + otherBin.relErr2
+        """
+        Divide this bin by the otherBin with proper error propagation.
+        If the denominator bins content is zero, the ratio is set to 0 with 0 error
+        to avoid division by 0
+        !"""
+        if otherBin.cont == 0:
+            if self.cont != 0:
+                print("Bin set to zero to avoid division by 0. "
+                      "Numerator was {}".format(self.cont))
+            self.cont = 0
+            self.relErr2 = 0
+        else:
+            self.cont = self.cont / otherBin.cont
+            self.relErr2 = self.relErr2 + otherBin.relErr2
+
         self.err = sqrt(self.relErr2) * self.cont
+
+        return self
+
 
     def setBin(self, h, i, j):
         """Set bin to the passed histogram (TH2D)"""
