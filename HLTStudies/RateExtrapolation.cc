@@ -7,6 +7,8 @@
 // ROOT
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1D.h"
+#include "TFitResultPtr.h"
 
 // stl
 #include <map>
@@ -167,6 +169,14 @@ std::vector<Rate> calcRateFromFile(TFile* f, const std::string& path,
   auto psCounts = getCounterMap<std::vector<int>>(binning.size()); // if trigger path passes, record its prescale (per each bin)
   auto lumiSecs = getCounterMap<unsigned>(binning.size()); // count the number of lumi sections in each bin
 
+  for (const auto& rl : binMap) { // all lumi sections appear only once in this map!
+    const int binIdx = getBin(rl.second, binning);
+    lumiSecs[binIdx]++;
+  }
+
+  // TH1D* lumiSecs = new TH1D("lumiSecs", "lumi Sections", binning.size() - 1, binning.data());
+  // TH1D* counts = new TH1D("counts", "trigger counts", binning.size() - 1, binning.data());
+
   const int nEntries = t->GetEntries();
   // const auto startTime = ProgressClock::now();
   for (int i = 0; i < nEntries; ++i) {
@@ -179,7 +189,8 @@ std::vector<Rate> calcRateFromFile(TFile* f, const std::string& path,
     const auto hltpsIt = hltpsMap.find(runLumi);
     if (binIt != binMap.cend() && hltpsIt != hltpsMap.cend()) {
       const int binIdx = getBin(binIt->second, binning);
-      lumiSecs[binIdx]++;
+      // // lumiSecs[binIdx]++;
+      // lumiSecs[binIdx] = 1; // do not double count lumi sections
 
       if (trigInfo.trig) {
         psCounts[binIdx].push_back(hltpsIt->second);
@@ -190,6 +201,9 @@ std::vector<Rate> calcRateFromFile(TFile* f, const std::string& path,
     }
     // printProgress(i, nEntries, startTime, 4);
   }
+
+  std::cout << lumiSecs << std::endl;
+  std::cout << psCounts << std::endl;
 
   // calculate the rate in each bin
   std::vector<Rate> rates;
