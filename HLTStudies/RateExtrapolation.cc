@@ -129,19 +129,20 @@ struct TriggerInfo {
 template<typename T>
 TH1D calcRateFromFile(TFile* f, const std::string& path,
                       const std::vector<T>& binning, const RunLumiMap<T>& binMap,
-                      const RunLumiMap<int>& hltpsMap/*, const RunLumiMap<T>& psIdxMap*/)
+                      const RunLumiMap<int>& hltpsMap/*, const RunLumiMap<T>& psIdxMap*/,
+                      const std::string& binningName = "")
 {
   TTree* t = getFromFile<TTree>(f, "HltTree");
   TriggerInfo trigInfo;
   trigInfo.Init(t, path);
 
-  TH1D lumiSecs("lumiSecs", "lumi sections", binning.size() - 1, binning.data());
+  TH1D lumiSecs(("lumiSecs" + binningName).c_str(), "lumi sections", binning.size() - 1, binning.data());
   for (const auto& rl: binMap) {
     lumiSecs.Fill(rl.second);
   }
 
-  TH1D counts("counts", "counts", binning.size() - 1, binning.data());
-  TH1D prescale("PS", "pre scales", binning.size() - 1, binning.data());
+  TH1D counts(("counts" + binningName).c_str(), "counts", binning.size() - 1, binning.data());
+  TH1D prescale(("PS" + binningName).c_str(), "pre scales", binning.size() - 1, binning.data());
 
   const int nEntries = t->GetEntries();
   // const auto startTime = ProgressClock::now();
@@ -178,12 +179,16 @@ TH1D calcRateFromFile(TFile* f, const std::string& path,
     rates.SetBinError(i, rateErr);
   }
 
+  lumiSecs.Write();
+  counts.Write();
+  prescale.Write();
+
   return rates;
 }
 
 TFitResultPtr fitRates(TH1D& rates, const double min, const double max)
 {
-  TF1* f = new TF1("fParab", "pol2", min, max);
+  TF1* f = new TF1("fParab", "pol1", min, max);
   return rates.Fit(f, "SMR");
 }
 
@@ -210,15 +215,18 @@ int main(int argc, char* argv[])
   const std::string file = argv[1];
   TFile* f = TFile::Open(file.c_str());
 
+  TFile* fout = new TFile((path + "_rates.root").c_str(), "recreate"); // open output file here to be able to write histos to it
   const std::string path = argv[2];
-  auto puRates = calcRateFromFile(f, path, puBinning, puLumiMaps.first, hltpsMap);
+  std::cout << "pileup rates" << std::endl;
+  auto puRates = calcRateFromFile(f, path, puBinning, puLumiMaps.first, hltpsMap, "_PU");
 
-  auto luRates = calcRateFromFile(f, path, lumiBinning, puLumiMaps.second, hltpsMap);
+  std::cout << "inst lumi rates" << std::endl;
+  auto luRates = calcRateFromFile(f, path, lumiBinning, puLumiMaps.second, hltpsMap, "_instLumi");
 
   auto puFitRlt = fitRates(puRates, 10, 60);
   auto luFitRlt = fitRates(luRates, 0.4e34, 1.4e34);
 
-  TFile* fout = new TFile("test.root", "recreate");
+  
   fout->cd();
   puRates.SetName("puRates");
   puRates.Write();
