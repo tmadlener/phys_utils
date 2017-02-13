@@ -9,6 +9,7 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TFitResultPtr.h"
+#include "TF1.h"
 
 // stl
 #include <map>
@@ -19,6 +20,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+
 
 /** store anything with (run, lumi) as key. */
 template<class T> using RunLumiMap = std::map<std::pair<int, int>, T>;
@@ -102,18 +104,6 @@ RunLumiMap<int> getHLTPSMap(const std::string& hltpsFileName)
   return hltpsMap;
 }
 
-/** helper struct */
-struct Rate {
-  double val;
-  double err;
-};
-
-std::ostream& operator<<(std::ostream& os, const Rate& r)
-{
-  os << r.val << " +/- " << r.err;
-  return os;
-}
-
 
 /** helper struct for getting info from the HLTBitAnalyser file. */
 struct TriggerInfo {
@@ -129,27 +119,6 @@ struct TriggerInfo {
   int lumi;
 };
 
-template<typename T>
-std::map<int, T> getCounterMap(const size_t N)
-{
-  std::map<int, T> map;
-  map.insert(std::make_pair(-1, T{})); // "overflow bin" for events that cannot be classified into the binning
-  for (size_t i = 0; i < N; ++i) { // "normal bins"
-    map.insert(std::make_pair(i, T{}));
-  }
-
-  return map;
-}
-
-template<typename T>
-std::ostream& operator<<(std::ostream& os, const std::map<int, T>& m)
-{
-  for (const auto & e : m) {
-    std::cout << e.first << ": " << e.second << std::endl;
-  }
-  return os;
-}
-
 
 /**
  * calc rate from data in file
@@ -158,24 +127,21 @@ std::ostream& operator<<(std::ostream& os, const std::map<int, T>& m)
  * TODO: make alessios macro work with my data
  */
 template<typename T>
-std::vector<Rate> calcRateFromFile(TFile* f, const std::string& path,
-                                   const std::vector<T>& binning, const RunLumiMap<T>& binMap,
-                                   const RunLumiMap<int>& hltpsMap/*, const RunLumiMap<T>& psIdxMap*/)
+TH1D calcRateFromFile(TFile* f, const std::string& path,
+                      const std::vector<T>& binning, const RunLumiMap<T>& binMap,
+                      const RunLumiMap<int>& hltpsMap/*, const RunLumiMap<T>& psIdxMap*/)
 {
   TTree* t = getFromFile<TTree>(f, "HltTree");
   TriggerInfo trigInfo;
   trigInfo.Init(t, path);
 
-  auto psCounts = getCounterMap<std::vector<int>>(binning.size()); // if trigger path passes, record its prescale (per each bin)
-  auto lumiSecs = getCounterMap<unsigned>(binning.size()); // count the number of lumi sections in each bin
-
-  for (const auto& rl : binMap) { // all lumi sections appear only once in this map!
-    const int binIdx = getBin(rl.second, binning);
-    lumiSecs[binIdx]++;
+  TH1D lumiSecs("lumiSecs", "lumi sections", binning.size() - 1, binning.data());
+  for (const auto& rl: binMap) {
+    lumiSecs.Fill(rl.second);
   }
 
-  // TH1D* lumiSecs = new TH1D("lumiSecs", "lumi Sections", binning.size() - 1, binning.data());
-  // TH1D* counts = new TH1D("counts", "trigger counts", binning.size() - 1, binning.data());
+  TH1D counts("counts", "counts", binning.size() - 1, binning.data());
+  TH1D prescale("PS", "pre scales", binning.size() - 1, binning.data());
 
   const int nEntries = t->GetEntries();
   // const auto startTime = ProgressClock::now();
@@ -188,12 +154,9 @@ std::vector<Rate> calcRateFromFile(TFile* f, const std::string& path,
     const auto binIt = binMap.find(runLumi);
     const auto hltpsIt = hltpsMap.find(runLumi);
     if (binIt != binMap.cend() && hltpsIt != hltpsMap.cend()) {
-      const int binIdx = getBin(binIt->second, binning);
-      // // lumiSecs[binIdx]++;
-      // lumiSecs[binIdx] = 1; // do not double count lumi sections
-
       if (trigInfo.trig) {
-        psCounts[binIdx].push_back(hltpsIt->second);
+        counts.Fill(binIt->second);
+        prescale.Fill(binIt->second, hltpsIt->second);
       }
     } else {
       std::cerr << "Couldn't find the Info needed for binning in the binMap for "
@@ -202,28 +165,27 @@ std::vector<Rate> calcRateFromFile(TFile* f, const std::string& path,
     // printProgress(i, nEntries, startTime, 4);
   }
 
-  std::cout << lumiSecs << std::endl;
-  std::cout << psCounts << std::endl;
-
   // calculate the rate in each bin
-  std::vector<Rate> rates;
-  for (int i = -1; i < (int)binning.size() - 1; ++i) { // in order to have the results correpsond to the passed binning
+  TH1D rates("rates", "rates", binning.size() - 1, binning.data());
+  for (int i = 0; i <= rates.GetNbinsX() + 1; ++i) { // include under- and overflow bin
     const unsigned nLumis = lumiSecs[i];
-    const auto& psVec = psCounts[i]; // vector of prescales
-    const size_t nCounts = psVec.size();
-    const int psSum = std::accumulate(psVec.cbegin(), psVec.cend(), 0); // sum up all prescale values
+    const double nCounts = counts.GetBinContent(i);
+    const double psSum = prescale.GetBinContent(i);
     const double rate = nLumis == 0 ? 0 : psSum / (nLumis * 23.31); // avoid division by zero
     const double rateErr = nCounts == 0 ? 0 : rate / std::sqrt(nCounts);
 
-    // std::cout << "i = " << i << ", nCounts = " << nCounts << ", psSum = " << psSum << ", nLumis = " << nLumis << std::endl;
-    // std::cout << rate << ", " << rateErr << std::endl;
-    rates.push_back({rate, rateErr});
+    rates.SetBinContent(i, rate);
+    rates.SetBinError(i, rateErr);
   }
 
   return rates;
 }
 
-
+TFitResultPtr fitRates(TH1D& rates, const double min, const double max)
+{
+  TF1* f = new TF1("fParab", "pol2", min, max);
+  return rates.Fit(f, "SMR");
+}
 
 const std::vector<double> puBinning = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60};
 const std::vector<double> lumiBinning = {0, 0.2e34, 0.4e34, 0.6e34, 0.8e34, 1e34, 1.2e34, 1.4e34, 1.6e34, 1.8e34, 2e34};
@@ -250,11 +212,21 @@ int main(int argc, char* argv[])
 
   const std::string path = argv[2];
   auto puRates = calcRateFromFile(f, path, puBinning, puLumiMaps.first, hltpsMap);
-  std::cout << "puRates = " << puRates << std::endl;
 
   auto luRates = calcRateFromFile(f, path, lumiBinning, puLumiMaps.second, hltpsMap);
-  std::cout << "luRates = " << luRates << std::endl;
 
+  auto puFitRlt = fitRates(puRates, 10, 60);
+  auto luFitRlt = fitRates(luRates, 0.4e34, 1.4e34);
+
+  TFile* fout = new TFile("test.root", "recreate");
+  fout->cd();
+  puRates.SetName("puRates");
+  puRates.Write();
+
+  luRates.SetName("luRates");
+  luRates.Write();
+
+  fout->Close();
   return 0;
 }
 #endif
