@@ -167,7 +167,7 @@ TH1D calcRateFromFile(TFile* f, const std::string& path,
   }
 
   // calculate the rate in each bin
-  TH1D rates("rates", "rates", binning.size() - 1, binning.data());
+  TH1D rates(("rates" + binningName).c_str(), "rates", binning.size() - 1, binning.data());
   for (int i = 0; i <= rates.GetNbinsX() + 1; ++i) { // include under- and overflow bin
     const unsigned nLumis = lumiSecs[i];
     const double nCounts = counts.GetBinContent(i);
@@ -215,8 +215,8 @@ int main(int argc, char* argv[])
   const std::string file = argv[1];
   TFile* f = TFile::Open(file.c_str());
 
-  TFile* fout = new TFile((path + "_rates.root").c_str(), "recreate"); // open output file here to be able to write histos to it
   const std::string path = argv[2];
+  TFile* fout = new TFile((path + "_rates.root").c_str(), "recreate"); // open output file here to be able to write histos to it
   std::cout << "pileup rates" << std::endl;
   auto puRates = calcRateFromFile(f, path, puBinning, puLumiMaps.first, hltpsMap, "_PU");
 
@@ -226,7 +226,6 @@ int main(int argc, char* argv[])
   auto puFitRlt = fitRates(puRates, 10, 60);
   auto luFitRlt = fitRates(luRates, 0.4e34, 1.4e34);
 
-  
   fout->cd();
   puRates.SetName("puRates");
   puRates.Write();
