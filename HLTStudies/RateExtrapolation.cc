@@ -9,6 +9,7 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TFitResultPtr.h"
+#include "TFitResult.h"
 #include "TF1.h"
 
 // stl
@@ -204,11 +205,11 @@ int main(int argc, char* argv[])
   }
 
   std::cout << "reading HLTPS map" << std::endl;
-  auto hltpsMap = getHLTPSMap("HLTPS.tsv");
+  auto hltpsMap = getHLTPSMap("/afs/cern.ch/user/t/thmadlen/phys_utils/HLTStudies/HLTPS.tsv");
   // std::cout << hltpsMap << std::endl;
 
   std::cout << "reading PU and inst lumi map" << std::endl;
-  auto puLumiMaps = getPuInstLumiMaps("PUTests.csv");
+  auto puLumiMaps = getPuInstLumiMaps("/afs/cern.ch/user/t/thmadlen/phys_utils/HLTStudies/PU.csv");
   // std::cout << puLumiMaps.first << std::endl;
   // std::cout << puLumiMaps.second << std::endl;
 
@@ -219,19 +220,22 @@ int main(int argc, char* argv[])
   TFile* fout = new TFile((path + "_rates.root").c_str(), "recreate"); // open output file here to be able to write histos to it
   std::cout << "pileup rates" << std::endl;
   auto puRates = calcRateFromFile(f, path, puBinning, puLumiMaps.first, hltpsMap, "_PU");
+  puRates.Write();
+
 
   std::cout << "inst lumi rates" << std::endl;
   auto luRates = calcRateFromFile(f, path, lumiBinning, puLumiMaps.second, hltpsMap, "_instLumi");
+  luRates.Write();
 
   auto puFitRlt = fitRates(puRates, 10, 60);
+  puFitRlt->SetName("pu_fit_results");
+  puFitRlt->Write();
+
   auto luFitRlt = fitRates(luRates, 0.4e34, 1.4e34);
+  luFitRlt->SetName("instlumi_fit_results");
+  luFitRlt->Write();
 
   fout->cd();
-  puRates.SetName("puRates");
-  puRates.Write();
-
-  luRates.SetName("luRates");
-  luRates.Write();
 
   fout->Close();
   return 0;
