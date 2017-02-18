@@ -23,8 +23,10 @@
 #include <cmath>
 
 
+using RunLumi = std::pair<int, int>;
+
 /** store anything with (run, lumi) as key. */
-template<class T> using RunLumiMap = std::map<std::pair<int, int>, T>;
+template<class T> using RunLumiMap = std::map<RunLumi, T>;
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const RunLumiMap<T>& map)
@@ -47,6 +49,7 @@ getPuInstLumiMaps(const std::string& puFileName)
   RunLumiMap<double> lumiMap;
 
   std::ifstream puFile(puFileName.c_str());
+  if(!puFile) std::cerr << "Can't open file " << puFileName << std::endl;
   std::string line;
   while(std::getline(puFile, line)) {
     if (!startsWith(line, "#")) { // assume lines starting with # are comments
@@ -80,23 +83,28 @@ getPuInstLumiMaps(const std::string& puFileName)
 }
 
 /** read the HLTPS values form the corresponding .tsv file into a map. */
-RunLumiMap<int> getHLTPSMap(const std::string& hltpsFileName)
+RunLumiMap<int> getHLTPSMap(const std::string& hltpsFileName, const std::string& option = "HLTPS")
 {
   RunLumiMap<int> hltpsMap;
+
+  /*const*/ std::map<std::string, int> optMap = {
+    {"PScolumn", 4}, {"HLTPS", 3}
+  };
 
   // std::cout << hltpsFileName << std::endl;
 
   std::ifstream hltpsFile(hltpsFileName.c_str());
   std::string line = "";
+  if (!hltpsFile) std::cerr << "Can't open file " << hltpsFileName << std::endl;
   while (std::getline(hltpsFile, line)) {
     if (!startsWith(line, "#")) {
       const auto fields = splitString(line, '\t');
       const int run = std::stoi(fields[0]);
       const int lumiStart = std::stoi(fields[1]);
       const int lumiEnd = std::stoi(fields[2]);
-      const int HLTPS = std::stoi(fields[3]); // splitString returns no empty tokens
+      const int PS = std::stoi(fields[optMap[option]]); // splitString returns no empty tokens
       for (int i = lumiStart; i <= lumiEnd; ++i){
-        hltpsMap.insert({{run, i}, HLTPS});
+        hltpsMap.insert({{run, i}, PS});
       }
     }
   }
@@ -104,7 +112,6 @@ RunLumiMap<int> getHLTPSMap(const std::string& hltpsFileName)
   hltpsFile.close();
   return hltpsMap;
 }
-
 
 /** helper struct for getting info from the HLTBitAnalyser file. */
 struct TriggerInfo {
@@ -204,12 +211,17 @@ int main(int argc, char* argv[])
     return 1;
   }
 
+  const std::string preScaleFile = "/afs/hephy.at/user/t/tmadlener/phys_utils/HLTStudies/HLTPS.tsv";
+  const std::string puFile = "/afs/hephy.at/user/t/tmadlener/phys_utils/HLTStudies/PUTests.csv";
+
   std::cout << "reading HLTPS map" << std::endl;
-  auto hltpsMap = getHLTPSMap("/afs/cern.ch/user/t/thmadlen/phys_utils/HLTStudies/HLTPS.tsv");
+  auto hltpsMap = getHLTPSMap(preScaleFile, "HLTPS");
   // std::cout << hltpsMap << std::endl;
 
+  auto psIdxMap = getHLTPSMap(preScaleFile, "PScolumn");
+
   std::cout << "reading PU and inst lumi map" << std::endl;
-  auto puLumiMaps = getPuInstLumiMaps("/afs/cern.ch/user/t/thmadlen/phys_utils/HLTStudies/PU.csv");
+  auto puLumiMaps = getPuInstLumiMaps(puFile);
   // std::cout << puLumiMaps.first << std::endl;
   // std::cout << puLumiMaps.second << std::endl;
 
