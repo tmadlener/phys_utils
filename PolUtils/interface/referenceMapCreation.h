@@ -150,8 +150,10 @@ Lambdas calcLambdasFromData(const std::vector<double>& cosTh2, const std::vector
   // errors are now calculated via simple error propagation
   const double overCosTh2Sq = overCosTh2 * overCosTh2;
   const double lthErr = 4 * ct2Sig * overCosTh2Sq;
-  const double lphErr = std::sqrt(overCosTh2Sq * st2c2pSig*st2c2pSig + sinth2cos2ph * overCosTh2Sq * ct2Sig*ct2Sig);
-  const double ltpErr = std::sqrt(overCosTh2Sq * s2tcpSig*s2tcpSig + sin2thcosph * overCosTh2Sq * ct2Sig*ct2Sig);
+  const double lphErr = std::sqrt(overCosTh2Sq * st2c2pSig*st2c2pSig +
+                                  sinth2cos2ph*sinth2cos2ph * overCosTh2Sq*overCosTh2Sq * ct2Sig*ct2Sig);
+  const double ltpErr = std::sqrt(overCosTh2Sq * s2tcpSig*s2tcpSig +
+                                  sin2thcosph*sin2thcosph * overCosTh2Sq*overCosTh2Sq * ct2Sig*ct2Sig);
 
   return {lth, lph, ltp, lthErr, lphErr, ltpErr};
 }
