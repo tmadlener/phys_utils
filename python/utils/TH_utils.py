@@ -118,6 +118,12 @@ class Bin:
             self.cont = self.cont / otherBin.cont
             self.relErr2 = self.relErr2 + otherBin.relErr2
 
+            if self.relErr2 > 0.04:
+                print("Bin set to zero, due to resulting rel. err = {} (> 0.2). "
+                      "Ratio was {}".format(sqrt(self.relErr2), self.cont))
+                self.cont = 0
+                self.relErr = 0
+
         self.err = sqrt(self.relErr2) * self.cont
 
         return self
@@ -181,6 +187,13 @@ def printTH2D(h):
         for j in range(0, h.GetNbinsX() + 2):
             row.append(h.GetBinContent(j,i))
         print(" ".join(str(v) for v in row))
+
+
+def printTH1D(h):
+    """Print the TH1D as a list, directly to the screen"""
+    print("Contents of: {}, ({})".format(h.GetName(), h.GetNbinsX()))
+    for i in range(0, h.GetNbinsX() + 2):
+        print("{} +/- {}".format(h.GetBinContent(i), h.GetBinError(i)))
 
 
 def drawTH2DColMap(h, c):
