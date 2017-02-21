@@ -19,7 +19,7 @@ def normalize2D(h, N = 1):
     return h
 
 
-def divide2D(h, g, name = "", normalize = False, norm = 1):
+def divide2D(h, g, name = "", normalize = False, norm = 1, relErrCut = None):
     """
     Divide histogram (TH2D) h by g doing an error propagation for each bin by calculating
     relative errors of the bins in each histogram and adding them in quadrature to get the relative
@@ -48,7 +48,7 @@ def divide2D(h, g, name = "", normalize = False, norm = 1):
         for j in range(0, n.GetNbinsY() + 2):
             nBin = Bin(n.GetBinContent(i,j), n.GetBinError(i,j))
             dBin = Bin(d.GetBinContent(i,j), d.GetBinError(i,j))
-            nBin.divide(dBin)
+            nBin.divide(dBin, relErrCut)
             nBin.setBin(n, i, j)
 
     if name:
@@ -102,7 +102,7 @@ class Bin:
         return "{} +/- {}, relErr2 = {}".format(self.cont, self.err, self.relErr2)
 
 
-    def divide(self, otherBin):
+    def divide(self, otherBin, relErrCut = None):
         """
         Divide this bin by the otherBin with proper error propagation.
         If the denominator bins content is zero, the ratio is set to 0 with 0 error
@@ -118,9 +118,9 @@ class Bin:
             self.cont = self.cont / otherBin.cont
             self.relErr2 = self.relErr2 + otherBin.relErr2
 
-            if self.relErr2 > 0.04:
-                print("Bin set to zero, due to resulting rel. err = {} (> 0.2). "
-                      "Ratio was {}".format(sqrt(self.relErr2), self.cont))
+            if relErrCut and self.relErr2 > relErrCut**2:
+                print("Bin set to zero, due to resulting rel. err = {} (> {}). "
+                      "Ratio was {}".format(sqrt(self.relErr2), relErrCut, self.cont))
                 self.cont = 0
                 self.relErr = 0
 

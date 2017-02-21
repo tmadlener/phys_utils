@@ -73,7 +73,9 @@ parser.add_argument("--no-ratios", dest="divideHists", help="Do not create the r
                     action="store_false")
 parser.add_argument("--normalize", dest="normHists", help="Normalize histograms to 1 before dividing them",
                     action="store_true")
-
+parser.add_argument("--relerr-cut", "-rc", help="Specify a (lower) cut on the relative error of the "
+                    "ratio. If the relative error is above this value, the bin will be set to zero.",
+                    dest="relErrCut", default=None, action="store", type=float)
 
 parser.set_defaults(numeratorBase="", denominatorBase="", outputBase="",
                     createCovMap=False, divideHists=True, normHists=False)
@@ -96,7 +98,7 @@ denomHists = collectHistograms(denomF, args.denominatorBase, TH2DCollector)
 
 outputF = TFile(args.outputFile, "recreate")
 if args.divideHists:
-    divide = partial(divide2D, normalize=args.normHists, norm = 1)
+    divide = partial(divide2D, normalize=args.normHists, norm = 1, relErrCut = args.relErrCut)
     ratioHists = divideHistograms(numHists, denomHists, divide, "ratio")
     storeRatioHists(outputF, ratioHists, args.outputBase)
 
