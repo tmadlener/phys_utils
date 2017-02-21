@@ -4,9 +4,11 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TGraphAsymmErrors.h"
+#include "TObjArray.h"
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 /** Try to open TFile with passed filename. */
 TFile* checkOpenFile(const std::string& filename)
@@ -58,6 +60,17 @@ void setPoint(TGraphAsymmErrors* g, const int i, const double x, const double y,
 {
   g->SetPoint(i, x, y);
   g->SetPointError(i, exl, exh, eyl, eyh);
+}
+
+/** Get the list of all branch names in the passed TTree. */
+std::vector<std::string> getBranchNames(TTree* t)
+{
+  std::vector<std::string> branchNames;
+  auto* branchObjList = t->GetListOfBranches();
+  for (int i = 0; i < branchObjList->GetEntries(); ++i) {
+    branchNames.push_back(branchObjList->At(i)->GetName());
+  }
+  return branchNames;
 }
 
 #endif
