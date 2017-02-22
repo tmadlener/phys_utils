@@ -14,17 +14,21 @@ def fitAngularDistribution(h):
             "+ [3]*2*x[0]*sqrt(1-x[0]*x[0])*cos(x[1]*0.0174532925)"
             ")",
             -1.0, 1.0, -180.0, 180.0)
-            # -0.8, 0.8, -180.0, 180.0) # TESTING
     W.SetParameters(1.0, 0.0, 0.0, 0.0)
 
     fitRlt = h.Fit(W, "S")
-    # fitRlt = h.Fit(W, "SR") # TESTING
-    fitRlt.SetName("_".join([h.GetName(), "Wcosthphi_rlt"]))
-    fitRlt.Write()
+    if int(fitRlt) == 0: # 0 indicates succesful fit
+        fitRlt.SetName("_".join([h.GetName(), "Wcosthphi_rlt"]))
+        fitRlt.Write()
 
-    return {"lth": [fitRlt.Parameter(1), fitRlt.Error(1)],
-            "lph": [fitRlt.Parameter(2), fitRlt.Error(2)],
-            "ltp": [fitRlt.Parameter(3), fitRlt.Error(3)]}
+        return {"lth": [fitRlt.Parameter(1), fitRlt.Error(1)],
+                "lph": [fitRlt.Parameter(2), fitRlt.Error(2)],
+                "ltp": [fitRlt.Parameter(3), fitRlt.Error(3)]}
+    else:
+        print("Fit returned status {} for histogram {}".format(int(fitRlt), h.GetName()))
+        return {"lth": [-999, 999],
+                "lph": [-999, 999],
+                "ltp": [-999, 999]}
 
 
 def collectLambdas(hists):
