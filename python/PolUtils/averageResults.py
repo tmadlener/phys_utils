@@ -34,7 +34,7 @@ Argparse
 parser = argparse.ArgumentParser(description="script for averaging the same graph from different files")
 parser.add_argument("inputFiles", help="list of input files to process",
                     nargs="+")
-parser.add_argument("-o", "--ouptutfile", help="File to which the averaged graph should be stored",
+parser.add_argument("-o", "--outputfile", help="File to which the averaged graph should be stored",
                     dest="outputFile", action="store", default="averageGraphs.root")
 
 args = parser.parse_args()
