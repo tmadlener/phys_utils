@@ -5,7 +5,7 @@
 // header including some small helper classes for easier creation of models in a RooWorkspace //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "string_stuff.h"
+#include "string_helper.h"
 
 #include "RooRealVar.h"
 #include "RooFormulaVar.h"

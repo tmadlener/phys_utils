@@ -5,6 +5,8 @@
 #include "TTree.h"
 #include "TGraphAsymmErrors.h"
 #include "TObjArray.h"
+#include "RooWorkspace.h"
+#include "RooRealVar.h"
 
 #include <string>
 #include <iostream>
@@ -42,7 +44,7 @@ inline bool checkGetEntry(TTree* t, const int event)
 
 /** deep-copy clone of object. */
 template<typename T>
-inline T* clone(const T* t)
+inline T* clone(T* t)
 {
   return static_cast<T*>(t->Clone());
 }
@@ -51,7 +53,8 @@ inline T* clone(const T* t)
 template<typename T>
 inline T* clone(const T& t)
 {
-  return clone(&t);
+  // return clone(&t);
+  return static_cast<T*>(t.Clone());
 }
 
 inline
@@ -71,6 +74,37 @@ std::vector<std::string> getBranchNames(TTree* t)
     branchNames.push_back(branchObjList->At(i)->GetName());
   }
   return branchNames;
+}
+
+/** get value of variable with name from workspace. */
+double getVarVal(RooWorkspace* ws, const std::string& name)
+{
+  auto* var = static_cast<RooRealVar*>(ws->var(name.c_str()));
+  if (var) return var->getVal();
+  var = static_cast<RooRealVar*>(ws->function(name.c_str()));
+  if (var) return var->getVal();
+
+  std::cerr << "Could not get " << name << " from workspace" << std::endl;
+  return 0; // returning zero to make this bugs a bit more subtle and harder to detect ;)
+}
+
+/** get value error of variable with name from workspace. */
+double getVarError(RooWorkspace* ws, const std::string& name)
+{
+  auto* var = static_cast<RooRealVar*>(ws->var(name.c_str()));
+  if (var) return var->getError();
+  var = static_cast<RooRealVar*>(ws->function(name.c_str()));
+  if (var) return var->getError();
+
+  std::cerr << "Could not get " << name << " from workspace" << std::endl;
+  return 0; // returning zero to make this bugs a bit more subtle and harder to detect ;)
+}
+
+/** set workspace variable constant to the passed value. */
+inline void setVarConstant(RooWorkspace* ws, const std::string& name, const double val)
+{
+  ws->var(name.c_str())->setVal(val);
+  ws->var(name.c_str())->setConstant(true);
 }
 
 #endif
