@@ -22,7 +22,7 @@ bool MuonAcceptance<11>::operator()(const double pT, const double absEta)
 }
 
 template<>
-bool MuonAcceptance<14>::operator()(const double pT, const double)
+bool MuonAcceptance<15>::operator()(const double pT, const double)
 {
   return pT > 3.5;
 }
