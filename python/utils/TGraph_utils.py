@@ -16,6 +16,7 @@ def getAvgVal(graphs, i):
     """Get the average value of all y-values at index i in all the passed graphs."""
     from numpy import mean, std
     from ROOT import Double
+    from math import sqrt
     x = Double(0)
     y = Double(0)
     vals = []
@@ -25,7 +26,10 @@ def getAvgVal(graphs, i):
         # reference (which would result in a list of equal values when evaluated later)
         vals.append(float(y))
 
-    return [mean(vals), std(vals)]
+    # numpy.std returns 1/N * sum(squared diff to mean) but sample std deviation is defined
+    # as 1/(N-1) * sum(squared diff to mean) (reps. the square root of it)
+    corrFactor = sqrt(float(len(vals))/(len(vals) - 1.0))
+    return [mean(vals), std(vals)*corrFactor]
 
 
 def getAvgErr(graphs, i):
