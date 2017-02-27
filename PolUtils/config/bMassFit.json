@@ -1,0 +1,54 @@
+{
+    "output_basedir": "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/Preparation/BmassFit/Full2012_singMu_3p5/",
+
+    "ptBinRange": [1,12],
+    "rapBinRange": [1,1],
+
+    "flag-config":
+    {
+
+    },
+
+    "run-config":
+    [
+        {"runDataJpsiFromB": false},
+        {"runWorkspaceJpsiFromB": false},
+        {"runBmassFit": false},
+        {"runPlotBmassFit": false}
+    ],
+
+    "exe-config":
+    {
+        "runDataJpsiFromB":
+        [
+            {"inputfiles":
+             [
+                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012A.root",
+                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012B.root",
+                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012C.root",
+                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012D_patch.root",
+                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012D_nopatch.root"
+             ]},
+            {"outputfile": "tmpFiles/selEvents_data.root"}
+        ],
+
+        "runWorkspaceJpsiFromB":
+        [
+            {"inputfile": "tmpFiles/selEvents_data.root"},
+            {"outputbase": "tmpFiles/backupWorkspace/ws_createWorkspace_JpsiFromB"}
+        ],
+
+        "runBmassFit":
+        [
+            {"input": "tmpFiles/backupWorkspace/ws_createWorkspace_JpsiFromB_rap0_pt0.root"},
+            {"output": "BmassFit_release_erfc_fix_jpsipi_3gaussians.root"}
+        ],
+
+        "runPlotBmassFit":
+        [
+            {"input": "BmassFit_release_erfc_fix_jpsipi_3gaussians.root"},
+            {"pdfname": "BmassFit_release_erfc_fix_jpsipi_3gaussians_nSig_3.pdf"},
+            {"nSig": 3.0}
+        ]
+    }
+}

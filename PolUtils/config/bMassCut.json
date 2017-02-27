@@ -1,0 +1,5 @@
+{
+    "processLines": [],
+    "tree": "tree_jpsi",
+    "cut": "(BplusP.M() > 5.21263 && BplusP.M() < 5.34413)"
+}
