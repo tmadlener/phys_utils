@@ -21,3 +21,28 @@ function cleanLatex() {
   rm ${basetex}.{log,aux}
   cd ${cwd}
 }
+
+
+## parse the passed arguments for 'plot', 'create' and 'fit' and set the uppercased
+## variable to 1 if found. 'all' sets all variables to 1
+## variables set in this way can be parsed by the condExecute if they are concatenated with a '+'
+function parseArgs() {
+  for arg in "$@"; do
+    case ${arg} in
+    all )
+      CREATE=1
+      PLOT=1
+      FIT=1
+      ;;
+    plot )
+      PLOT=1
+      ;;
+    create )
+      CREATE=1
+      ;;
+    fit )
+      FIT=1
+      ;;
+    esac
+  done
+}
