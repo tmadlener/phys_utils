@@ -73,6 +73,15 @@ with open(args.jsonFile) as f:
 """
 Actual script
 """
+if 'build' in fullConfig and fullConfig['build']:
+    try:
+        subprocess.check_call(["make",
+                               "-C", os.path.join(os.environ["PHYS_UTILS_DIR"], "PolUtils"),
+                               "-k", "-j4", "all"])
+    except subprocess.CalledProcessError:
+        print("Could not build the executables, check compile output to see what's wrong.")
+
+# run all specified executables from the json configuration
 for exe in fullConfig["run-config"]:
     (name, run), = exe.items()
     if run:

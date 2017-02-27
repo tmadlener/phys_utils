@@ -4,6 +4,8 @@
     "ptBinRange": [1,12],
     "rapBinRange": [1,1],
 
+    "build": true,
+
     "flag-config":
     {
 
