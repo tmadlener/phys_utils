@@ -27,6 +27,10 @@ function cleanLatex() {
 ## variable to 1 if found. 'all' sets all variables to 1
 ## variables set in this way can be parsed by the condExecute if they are concatenated with a '+'
 function parseArgs() {
+  if [ $# -eq 0 ]; then
+    echo "usage: "${0}" [create,fit,plot,all]"
+    exit 1
+  fi
   for arg in "$@"; do
     case ${arg} in
     all )
