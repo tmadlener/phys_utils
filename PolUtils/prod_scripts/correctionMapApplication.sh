@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# topDir=${MY_DATA_DIR}/ChicPol/InclusiveJpsiResults # top directory of output
-topDir=${MY_DATA_DIR}/ChicPol/TestMe
+topDir=${MY_DATA_DIR}/ChicPol/InclusiveJpsiResults # top directory of output
 
 Binning=JpsiBinning
 ptBinning="10 12 14 16 18 20 22 25 30 35 40 50 70"

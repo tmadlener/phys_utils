@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# topDir=${MY_DATA_DIR}/ChicPol/InclusiveJpsiResults # top directory of output
-topDir=${MY_DATA_DIR}/ChicPol/TestMe
+topDir=${MY_DATA_DIR}/ChicPol/InclusiveJpsiResults # top directory of output
 
 ## prompt or NP input data
 rawDataDir=${MY_DATA_DIR}/ChicPol/JpsiFromB/AllJpsi/results
