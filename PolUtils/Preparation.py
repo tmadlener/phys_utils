@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 import os
+from sys import exit
 
 from utils.miscHelpers import condMkDirFile, strArgList, mergeDicts
 
@@ -80,6 +81,7 @@ if 'build' in fullConfig and fullConfig['build']:
                                "-k", "-j4", "all"])
     except subprocess.CalledProcessError:
         print("Could not build the executables, check compile output to see what's wrong.")
+        exit(1) # don't run with possibly present old executables!
 
 # run all specified executables from the json configuration
 for exe in fullConfig["run-config"]:
