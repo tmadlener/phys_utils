@@ -21,6 +21,12 @@ TFile_utils/saveCanvas
 TGraph_utils/test/testTGAData
 TGraph_utils/test/testPoint
 EventMixer/src/simpleMixer
+HLTStudies/RateExtrapolation
+HLTStudies/L1eff
+
+# libs
+HLTStudies/libNtupleTree.so
+HLTStudies/ntupleTreeDict*
 
 # ignore some folders (for now)
 macros/
