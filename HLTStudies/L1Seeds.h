@@ -89,6 +89,9 @@ L1SeedMap createL1SeedMap()
   L1Seeds["DoubleMu6_OS_dR0to1"] = [](const L1MuonCand& m1, const L1MuonCand& m2) {
     return DoubleMuX(m1, m2, 6) && OS(m1, m2) && dRXtoY(m1, m2, 0, 1);
   };
+  L1Seeds["L1Matching"] = [](const L1MuonCand&, const L1MuonCand&) { // only checking the matching efficiency
+    return true;
+  };
 
   return L1Seeds;
 }

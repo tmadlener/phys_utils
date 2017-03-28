@@ -16,5 +16,5 @@ ntupleTreeDict.cxx: $(TUPLERDIR)/src/ntupleTree.h $(TUPLERDIR)/src/ntupleTreeLin
 libNtupleTree.so: ntupleTreeDict.cxx $(TUPLERDIR)/src/ntupleTree.h
 	g++ -shared -o$@ $(LDFLAGS) $(CXXFLAGS) $(ROOTINC) $^
 
-L1eff: L1efficiencies.cc libNtupleTree.so
+L1eff: L1efficiencies.cc libNtupleTree.so L1Seeds.h
 	g++ $(CXXFLAGS) $(ROOTLIBS) -o $@ L1efficiencies.cc $(ROOTINC) -I$$HOME/phys_utils -I$(TUPLERDIR)/src libNtupleTree.so

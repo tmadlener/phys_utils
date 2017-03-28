@@ -17,42 +17,55 @@
 
 #include "ntupleTree.h"
 #include "general/ArgParser.h"
-#include "HLTStudies/L1Seeds.h"
-
-// COMPILE
-// g++ $(root-config --libs --cflags) -Wall -Wextra -O2 efficiencies.cc -o eff -I$HOME/phys_utils/
+#include "L1Seeds.h"
 
 /** match muon and l1 muon via deltaR (and also pT if necessary).
  * Return the index of the muon in the l1Muons vector (or -1).
  */
-int l1MuonMatch(const double muEta, const double muPhi, const double muPt,
-                const std::vector<L1MuonCand>& l1Muons,
-                const double dRcut, const double dPtCut)
+std::vector<int> l1MuonMatch(const double muEta, const double muPhi, const double muPt,
+                             const std::vector<L1MuonCand>& l1Muons,
+                             const double dRcut, const double dPtCut)
 {
   int i = 0;
+  std::vector<int> ids;
   for (const auto& l1Muon : l1Muons) {
     // const double dEta = muEta - l1Muon.etaAtVtx;
     // const double dPhi = deltaPhi(muPhi, l1Muon.phiAtVtx);
     // const double deltaR = std::sqrt(dEta*dEta + dPhi*dPhi);
+    // const double dR = deltaR(muEta, l1Muon.etaAtVtx, muPhi, l1Muon.phiAtVtx);
     const double dR = deltaR(muEta, l1Muon.etaAtVtx, muPhi, l1Muon.phiAtVtx);
 
     const double dPt = std::abs(muPt - l1Muon.pt) / l1Muon.pt;
 
-    if (dR < dRcut /*&& dPt < dPtCut*/) return i;
+    if (dR < dRcut /*&& dPt < dPtCut*/) ids.push_back(i);
     i++;
   }
 
-  return -1;
+  return ids;
 }
 
 /**
  * check if the muons of the dimuon can be matched to L1 muons and return their indices (or -1)
  */
-std::pair<int, int> l1Match(const MuMuCand& dimu, const std::vector<L1MuonCand>& l1Muons,
-                            const double dR, const double dPt)
+std::vector<std::pair<int, int>> l1Match(const MuMuCand& dimu, const std::vector<L1MuonCand>& l1Muons,
+                                         const double dR, const double dPt)
 {
-  return {l1MuonMatch(dimu.Mu1Eta, dimu.Mu1Phi, dimu.Mu1Pt, l1Muons, dR, dPt),
-      l1MuonMatch(dimu.Mu2Eta, dimu.Mu2Phi, dimu.Mu2Pt, l1Muons, dR, dPt)};
+  const auto m1Idcs = l1MuonMatch(dimu.Mu1Eta, dimu.Mu1Phi, dimu.Mu1Pt, l1Muons, dR, dPt);
+  const auto m2Idcs = l1MuonMatch(dimu.Mu2Eta, dimu.Mu2Phi, dimu.Mu2Pt, l1Muons, dR, dPt);
+
+  std::vector<std::pair<int, int>> idCombs;
+  for (const int i : m1Idcs) {
+    for (const int j : m2Idcs) {
+      auto idComp = [&](const std::pair<int, int>& p) {
+        return (p.first == i && p.second == j) || (p.first == j && p.second == i);
+      };
+      if (i != j &&
+          std::find_if(idCombs.begin(), idCombs.end(), idComp) == idCombs.end()) {
+        idCombs.push_back({i, j});
+      }
+    }
+  }
+  return idCombs;
 }
 
 /** fiducial cuts. */
@@ -98,25 +111,6 @@ std::vector<int> offlineCuts(const std::vector<MuMuCand>& dimuons)
   return idcs;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// // HISTOGRAMS FOR CALCULATING L1 EFFICIENCIES
-// using HistMap = std::unordered_map<std::string, std::pair<TH1D*, TH1D*>>;
-// HistMap
-// createHistMap(const L1SeedMap& l1Seeds, const int nBins, const double min, const double max,
-//               const std::string& suffix)
-// {
-//   HistMap hists;
-//   for (const auto& seed : l1Seeds) {
-//     hists.insert({seed.first,
-//           {   new TH1D((seed.first + suffix + "_num").c_str(), seed.first.c_str(), nBins, min, max),
-//               new TH1D((seed.first + suffix + "_denom").c_str(), seed.first.c_str(), nBins, min, max)}
-//       });
-//   }
-
-//   return hists;
-// }
-
 using VariableMap = std::unordered_map<std::string, std::function<double(const MuMuCand&)>>;
 VariableMap createVariableMap()
 {
@@ -124,15 +118,15 @@ VariableMap createVariableMap()
   varMap["JpsiPt"] = [](const MuMuCand& m) { return m.JpsiPt; };
   varMap["Mu1Pt"] = [](const MuMuCand& m) { return m.Mu1Pt; };
   varMap["Mu2Pt"] = [](const MuMuCand& m) { return m.Mu2Pt; };
-  // varMap["JpsiRap"] = [](const MuMuCand& m) { return m.JpsiRap; };
-  // varMap["JpsiEta"] = [](const MuMuCand& m) { return m.JpsiEta; };
-  // varMap["JpsiPhi"] = [](const MuMuCand& m) { return m.JpsiPhi; };
-  // varMap["Mu1Phi"] = [](const MuMuCand& m) { return m.Mu1Phi; };
-  // varMap["Mu2Phi"] = [](const MuMuCand& m) { return m.Mu2Phi; };
-  // varMap["Mu1Eta"] = [](const MuMuCand& m) { return m.Mu1Eta; };
-  // varMap["Mu2Eta"] = [](const MuMuCand& m) { return m.Mu2Eta; };
-  // varMap["cosThHX"] = [](const MuMuCand& m) { return m.cosThHX; };
-  // varMap["phiHX"] = [](const MuMuCand& m) { return m.phiHX; };
+  varMap["JpsiRap"] = [](const MuMuCand& m) { return m.JpsiRap; };
+  varMap["JpsiEta"] = [](const MuMuCand& m) { return m.JpsiEta; };
+  varMap["JpsiPhi"] = [](const MuMuCand& m) { return m.JpsiPhi; };
+  varMap["Mu1Phi"] = [](const MuMuCand& m) { return m.Mu1Phi; };
+  varMap["Mu2Phi"] = [](const MuMuCand& m) { return m.Mu2Phi; };
+  varMap["Mu1Eta"] = [](const MuMuCand& m) { return m.Mu1Eta; };
+  varMap["Mu2Eta"] = [](const MuMuCand& m) { return m.Mu2Eta; };
+  varMap["cosThHX"] = [](const MuMuCand& m) { return m.cosThHX; };
+  varMap["phiHX"] = [](const MuMuCand& m) { return m.phiHX; };
 
   return varMap;
 }
@@ -218,18 +212,18 @@ using BinningMap = std::unordered_map<std::string, Binning>;
 BinningMap createBinningMap()
 {
   BinningMap binMap;
-  binMap["JpsiPt"] = Binning{25, 20, 50};
+  binMap["JpsiPt"] = Binning{25, 10, 50};
   binMap["Mu1Pt"] = Binning{25, 0, 30};
   binMap["Mu2Pt"] = Binning{25, 0, 30};
-  // binMap["JpsiRap"] = Binning{25, -1.205, 1.205};
-  // binMap["JpsiEta"] = Binning{25, -2.4, 2.4};
-  // binMap["JpsiPhi"] = Binning{25, -3.15, 3.15};
-  // binMap["Mu1Phi"] = Binning{25, -3.15, 3.15};
-  // binMap["Mu2Phi"] = Binning{25, -3.15, 3.15};
-  // binMap["Mu1Eta"] = Binning{25, -2.4, 2.4};
-  // binMap["Mu2Eta"] = Binning{25, -2.4, 2.4};
-  // binMap["cosThHX"] = Binning{25, -1.0, 1.0};
-  // binMap["phiHX"] = Binning{25, -180, 180};
+  binMap["JpsiRap"] = Binning{25, -1.205, 1.205};
+  binMap["JpsiEta"] = Binning{25, -2.4, 2.4};
+  binMap["JpsiPhi"] = Binning{25, -3.15, 3.15};
+  binMap["Mu1Phi"] = Binning{25, -3.15, 3.15};
+  binMap["Mu2Phi"] = Binning{25, -3.15, 3.15};
+  binMap["Mu1Eta"] = Binning{25, -2.4, 2.4};
+  binMap["Mu2Eta"] = Binning{25, -2.4, 2.4};
+  binMap["cosThHX"] = Binning{25, -1.0, 1.0};
+  binMap["phiHX"] = Binning{25, -180, 180};
 
   return binMap;
 }
@@ -244,40 +238,33 @@ TH1D* createHist(const std::vector<double>& vals,
   return h;
 }
 
-TH1D* calcEff(const std::vector<double>& numVals, const std::vector<double>& denomVals,
-              const Binning& binning, const std::string& name)
+void calcEff(const std::vector<double>& numVals, const std::vector<double>& denomVals,
+             const Binning& binning, const std::string& name)
 {
-  auto* numHist = createHist(numVals, binning, name + "_num");
-  auto* denomHist = createHist(denomVals, binning, name + "_denom");
+  auto* numHist = createHist(numVals, binning, name + "_offline");
+  auto* denomHist = createHist(denomVals, binning, name + "_offline_L1");
   numHist->Write();
   denomHist->Write();
 
-  auto* ratio = static_cast<TH1D*>(numHist->Clone(name.c_str()));
+  auto* ratio = static_cast<TH1D*>(numHist->Clone((name + "_eff").c_str()));
 
   ratio->Divide(denomHist);
   ratio->Write();
-  return ratio;
+  // return ratio;
 }
 
-void plotEff(const ValueMap::value_type& variable, const BinningMap& binningMap)
+void createPlot(const ValueMap::value_type& variable, const BinningMap& binningMap)
 {
   const std::string varName = variable.first.second;
   const std::string plotName = variable.first.first + "_" + varName;
 
   auto it = binningMap.find(varName);
-  auto* eff = calcEff(variable.second.second, variable.second.first, it->second, plotName);
-
-  auto* can = new TCanvas("c", "c", 1000, 1000);
-  can->cd();
-  eff->Draw("PLE");
-
-  const std::string filename = "plots/" + plotName + ".pdf";
-  can->SaveAs(filename.c_str());
+  calcEff(variable.second.second, variable.second.first, it->second, plotName);
 }
 
 void makePlots(const ValueMap& valMap, const BinningMap& binningMap)
 {
-  for (const auto& val : valMap) plotEff(val, binningMap);
+  for (const auto& val : valMap) createPlot(val, binningMap);
 }
 
 const double dRcut = 0.3;
@@ -304,6 +291,7 @@ int main(int argc, char *argv[])
 
   unsigned multJpsiInEvent{};
   unsigned passedOffline{};
+  std::unordered_map<size_t, unsigned> l1MuonCounter;
 
   for (int i = 0; i < t->GetEntries(); ++i) {
     t->GetEntry(i);
@@ -315,21 +303,43 @@ int main(int argc, char *argv[])
 
     if (dimuIdcs.size() > 1) multJpsiInEvent++;
 
+    for (const auto seed : l1SeedMap) { l1ResultMap[seed.first] = false; } // reset map
+
     // for each possible dimuon candidate check if the muons match the L1 muons and if so,
     // also if these satisfy the different L1 seeds and store the results in a results map
-    for (const auto seed : l1SeedMap) { l1ResultMap[seed.first] = false; } // reset map
     for (const int idx : dimuIdcs) {
-      const auto l1MuIdcs = l1Match(event->mumucands[idx], event->L1muons, dRcut, dPtCut);
-      if ((l1MuIdcs.first < 0 && l1MuIdcs.second < 0) ||
-          (l1MuIdcs.first == l1MuIdcs.second)) continue; // no match or both have the same l1 muon
-      for (const auto& seed : l1SeedMap) {
+      const auto l1MuCombs = l1Match(event->mumucands[idx], event->L1muons, dRcut, dPtCut);
+      l1MuonCounter[l1MuCombs.size()]++;
+      for (const auto& l1MuIdcs : l1MuCombs) {
+        for (const auto& seed : l1SeedMap) {
 
-        if (seed.second(event->L1muons[l1MuIdcs.first],
-                        event->L1muons[l1MuIdcs.second])) {
-          l1ResultMap[seed.first] = true;
+          if (seed.second(event->L1muons[l1MuIdcs.first],
+                          event->L1muons[l1MuIdcs.second])) {
+            l1ResultMap[seed.first] = true;
+          }
         }
       }
     }
+
+    // 27.03.17: check if any combination of two L1 muons passes the L1 seed requirements
+    // const std::vector<L1MuonCand>& l1Muons = event->L1muons;
+    // l1MuonCounter[l1Muons.size()]++;
+    // if (l1Muons.size() > 1) {
+    //   for (size_t j = 0; j < l1Muons.size() - 1; ++j) {
+    //     const L1MuonCand& m1 = l1Muons[j];
+    //     for (size_t k = j + 1; k < l1Muons.size(); ++k) {
+    //       const L1MuonCand& m2 = l1Muons[k];
+    //       for (const auto& seed : l1SeedMap) {
+    //         if (seed.second(m1, m2)) {
+    //           l1ResultMap[seed.first] = true;
+    //         }
+    //       }
+    //     }
+    //   }
+    // } else {
+    //   onlyOneL1Muon++;
+    // }
+
 
     // WARNING: only taking the varibles of the first dimuon candidate here (even if there are possibly more in the event)
     fillValues(valMap, varMap, event->mumucands[dimuIdcs[0]], l1ResultMap);
@@ -337,7 +347,10 @@ int main(int argc, char *argv[])
   f->Close();
 
   std::cout << passedOffline << " events passed the offline selection, " << multJpsiInEvent
-            << " of them had more then one dimuon candidate. f = " << (double)multJpsiInEvent/passedOffline << std::endl;
+            << " of them had more then one dimuon candidate. f = "
+            << (double)multJpsiInEvent/passedOffline <<  "\n";
+  std::cout << "L1 muon comb stats:\n";
+  for (const auto& c : l1MuonCounter) std::cout << c.first << " " << c.second << "\n";
 
   TFile* of = new TFile(ofn.c_str(), "recreate");
   writeRawToFile(of, "raw_vals", valMap);
