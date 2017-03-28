@@ -19,6 +19,10 @@ bool jpsiFromBPreSelection(const JpsiFromBInputEvent& inEvent, JpsiFromBEvent& e
   const double jpsiPt = inEvent.jpsi().Pt();
   if(jpsiPt > 990.0) return false;
 
+  if (inEvent.track().Pt() < config::JpsiFromBPS.trackPtCut) return false;
+
+  if (inEvent.lxyToSigma < config::JpsiFromBPS.lifetimeSignificance) return false;
+
   // count all events
   Reco_StatEv->Fill(0.5);
 

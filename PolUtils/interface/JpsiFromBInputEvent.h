@@ -18,6 +18,7 @@ public:
   const TLorentzVector& muPos() const { return *m_muPos; }
   const TLorentzVector& muNeg() const { return *m_muNeg; }
   const TLorentzVector& bPlus() const { return *m_bPlus; }
+  const TLorentzVector& track() const { return *m_track; }
 
   int eventNb;
   int runNb;
@@ -30,6 +31,8 @@ public:
 
   double BvProb;
 
+  double lxyToSigma;
+
 private:
 
   TLorentzVector* m_jpsi{nullptr};
@@ -39,6 +42,8 @@ private:
   TLorentzVector* m_muNeg{nullptr};
 
   TLorentzVector* m_bPlus{nullptr};
+
+  TLorentzVector* m_track{nullptr};
 };
 
 void JpsiFromBInputEvent::Init(TTree* tree)
@@ -58,6 +63,10 @@ void JpsiFromBInputEvent::Init(TTree* tree)
 
   tree->SetBranchAddress("BplusP", &m_bPlus);
   tree->SetBranchAddress("bVprob", &BvProb);
+
+  tree->SetBranchAddress("trackP", &m_track);
+
+  tree->SetBranchAddress("bBPAPVLxyToSigmaxy", &lxyToSigma);
 }
 
 #endif

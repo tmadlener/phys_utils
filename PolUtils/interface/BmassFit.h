@@ -25,6 +25,7 @@
 #include <string>
 #include <utility>
 #include <tuple>
+#include <cmath>
 
 void setupMassFit(RooWorkspace* ws, const FitModel& fitModel,
                   const std::vector<std::pair<std::string, double> >& constVals)
@@ -57,8 +58,8 @@ void doFit(RooWorkspace* ws, const std::string& modelName)
 
   std::cout << ws->pdf(modelName.c_str()) << std::endl;
   ws->pdf(modelName.c_str())->fitTo(*ws->data("jpsi_fromB_data_rap0_pt0"),
-                                                             Minos(false), NumCPU(4), Offset(false),
-                                                             Extended(true));
+                                    Minos(false), NumCPU(4), Offset(false),
+                                    Extended(true));
 
   RooFitResult* res_data = ws->pdf(modelName.c_str())->fitTo(*ws->data("jpsi_fromB_data_rap0_pt0"),
                                                              Minos(true), NumCPU(4), Offset(false), Save(true),
@@ -192,12 +193,14 @@ std::tuple<double, double, double, double> calcSRandBGFraction(RooWorkspace* ws,
   const double frac3 = getVarVal(ws, "m_fraction3");
   const double frac2 = getVarVal(ws, "m_fraction2");
   const double frac1 = 1 - frac2 - frac3;
+  // const double frac1 = 1 - frac2;
 
   const double sig3 = getVarVal(ws, "m_sigma3");
   const double sig2 = getVarVal(ws, "m_sigma2");
   const double sig1 = getVarVal(ws, "m_sigma1");
 
   const double sigma = sig1 * frac1 + sig2 * frac2 + sig3 * frac3;
+  // const double sigma = sig1 * frac1 + sig2 * frac2;
 
   std::cout << "====================" << std::endl;
   std::cout << "   s    |    f      " << std::endl;
@@ -251,8 +254,16 @@ std::tuple<double, double, double, double> calcSRandBGFraction(RooWorkspace* ws,
   std::cout << "background fraction: " << fracComb / fracTotalInSR << std::endl;
   std::cout << "JpsiPi fraction: " << fracJpsiPi / fracTotalInSR << std::endl;
 
+  // Calculate significance (and number of signal and background events)
+  const double nSigInSR = fracSigInSR * getVarVal(ws, "n_signal")
+    + fracPiInSR * getVarVal(ws, "n_jpsipi");
+  const double nBkgInSR = fracCombInSR * getVarVal(ws, "n_combinatorial");
+
+  std::cout << "Number of events in Signal Region:\n";
+  std::cout << "S = " << nSigInSR << ", B = " << nBkgInSR
+            << " significance = " << nSigInSR / std::sqrt(nSigInSR + nBkgInSR) << '\n';
+
   return std::make_tuple(lowM, highM, fracComb/fracTotalInSR, fracJpsiPi / fracTotalInSR);
-  // TODO: fractions
 }
 
 #endif

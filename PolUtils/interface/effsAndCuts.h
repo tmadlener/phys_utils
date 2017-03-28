@@ -27,6 +27,12 @@ bool MuonAcceptance<15>::operator()(const double pT, const double)
   return pT > 3.5;
 }
 
+template<>
+bool MuonAcceptance<16>::operator()(const double pT, const double absEta)
+{
+  return (pT > 3.5 && absEta < 1.4) || (pT > 3.0 && absEta >= 1.4);
+}
+
 /**
  * Evaulate the correction map.
  *

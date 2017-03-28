@@ -15,6 +15,8 @@ namespace config {
     const double bPtCut = 0.0; /**< cut in GeV/c on the B meson pT. */
     const double vtxProbB = 0.01; /**< vertex prob. cut on B-vertex. */
     const double vtxProbJpsi = 0.01; /**< vertex prob cut on Jpsi vertex. */
+    const double lifetimeSignificance = 2.0; /**< lifetime significance cut. */
+    const double trackPtCut = 1.2; /**< cut on the charged track pT in GeV. */
   } JpsiFromBPS; /**< The used settings for the JPsi pre-selection*/
 }
 

@@ -13,7 +13,7 @@ namespace config {
     static constexpr double massMin = massPDG - 0.2; // GeV
     static constexpr double massMax = massPDG + 0.2; // GeV
 
-    static constexpr size_t FidCuts = 15; // compatibility with old version
+    static constexpr size_t FidCuts = 16; // compatibility with old version
 
     const std::vector<double> ptBinning = {
       10., 12., 14., 16., 18., 20., 22., 25., 30., 35., 40., 50., 70. // jpsi
