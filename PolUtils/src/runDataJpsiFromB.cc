@@ -24,11 +24,12 @@ int main(int argc, char* argv[])
   const auto outfilename = inArgs.getOptionVal<std::string>("--outputfile");
   const auto inputfileNames = inArgs.getOptionVal<std::vector<std::string> >("--inputfiles");
 
-  TChain* inChain = new TChain("tree_jpsi");
-  for (const auto& name : inputfileNames) {
-    inChain->Add(name.c_str());
-  }
-  TTree* tin = inChain;
+  // TChain* inChain = new TChain("tree_jpsi");
+  // for (const auto& name : inputfileNames) {
+  //   inChain->Add(name.c_str());
+  // }
+  // TTree* tin = inChain;
+  TTree* tin = createTChain(inputfileNames, "tree_jpsi");
 
   TFile* fout = new TFile(outfilename.c_str(), "recreate");
   TTree* tout = new TTree("selectedData", "selected events");

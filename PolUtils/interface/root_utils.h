@@ -3,6 +3,7 @@
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TChain.h"
 #include "TGraphAsymmErrors.h"
 #include "TObjArray.h"
 #include "RooWorkspace.h"
@@ -105,6 +106,22 @@ inline void setVarConstant(RooWorkspace* ws, const std::string& name, const doub
 {
   ws->var(name.c_str())->setVal(val);
   ws->var(name.c_str())->setConstant(true);
+}
+
+TChain* createTChain(const std::vector<std::string>& fileNames, const std::string& treename)
+{
+  TChain* inChain = new TChain(treename.c_str());
+  for (const auto& name : fileNames) {
+    inChain->Add(name.c_str());
+  }
+  return inChain;
+}
+
+TChain* createTChain(const std::string& filename, const std::string& treename)
+{
+  TChain* inChain = new TChain(treename.c_str());
+  inChain->Add(filename.c_str());
+  return inChain;
 }
 
 #endif
