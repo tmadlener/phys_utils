@@ -40,7 +40,7 @@ namespace config {
       "RooGaussian::m_gaussian3(Bmass, m_mean3, m_sigma3)",
 
       // "RooCBShape::m_gaussian2(Bmass, m_mean2, m_sigma2, m_cb_alpha[-2.5,2.5], m_cb_n[-2.5,2.5])",
-      // "SUM::pdf_m_signal(m_fraction2 * m_gaussian2, m_gaussian2)", // sticking with the two gaussians, not using CB
+      // "SUM::pdf_m_signal(m_fraction2 * m_gaussian2, m_gaussian1)", // sticking with the two gaussians, not using CB
       "SUM::pdf_m_signal(m_fraction3 * m_gaussian3, m_fraction2 * m_gaussian2, m_gaussian1)",
 
       "RooExponential::pdf_m_combinatorial(Bmass, m_exp[-0.3, -20.0, 20.0])", // comb. background via exponential
@@ -85,8 +85,8 @@ namespace config {
       {"m_nonprompt_scale", 1.93204e-02, 0.001, 0.03},
 
       // full model combination variables
-      {"n_signal", 5e3, 0, 1e6},
-      {"n_combinatorial", 1e3, 0, 1e6},
+      {"n_signal", 5e4, 0, 2e6}, // more data points with looser cuts
+      {"n_combinatorial", 1e5, 0, 5e6}, // more data points with looser cuts
       {"f_jpsipi", 4.1e-5/1.026e-3, 0, 0.1}, // BF(Jpsi pi) = (4.1±0.4)×10−5 / BF(Jpsi K) = (1.026±0.031)×10−3
       {"f_nonprompt", 2.50259e-01, 0, 0.3},
     };
