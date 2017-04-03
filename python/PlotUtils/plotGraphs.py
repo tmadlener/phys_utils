@@ -237,7 +237,10 @@ for plot in json["plots"]:
                 graph.Draw('P')
                 legEntry = legEntryBase
                 if plot["graphs"][2*i + 1]: # check if a legend entry has been specified before adding it
-                    legEntry = ", ".join([legEntryBase, plot["graphs"][2*i + 1]])
+                    if legEntryBase:
+                        legEntry = ", ".join([legEntryBase, plot["graphs"][2*i + 1]])
+                    else:
+                        legEntry = plot["graphs"][2*i +1]
 
                 legend.AddEntry(graph, legEntry, "ple")
                 plotCounter += 1
