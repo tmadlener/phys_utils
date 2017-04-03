@@ -3,7 +3,7 @@
 import argparse
 
 from utils.recurse import collectHistograms, TH2DCollector
-from utils.miscHelpers import getRapPt
+from utils.miscHelpers import getAnyMatchRgx
 from utils.Fit_utils import createAndStoreGraphs
 
 def fitAngularDistribution(h):
@@ -53,13 +53,19 @@ parser.add_argument("--histrgx", help="Regex the histogram names have to match t
                     dest="histRgx", action="store")
 parser.add_argument("--graphbase", help="Base name for the created graphs.",
                     dest="graphBase", action="store")
-parser.add_argument("--ptBinning", help="pt binning that should be used",
-                    dest="ptBinning", nargs="+", required=True)
+parser.add_argument("--varBinning", help="binning of the variable to be used",
+                    dest="varBinning", nargs="+", required=True)
+parser.add_argument("--binVariable", help="regex of the binned variable", dest="binVarRgx",
+                    action="store")
+parser.add_argument("--fixedVariable", help="regex of the fixed variable (i.e. each different index of this variable gets a new graph)",
+                    dest="fixVarRgx", action="store")
 
-parser.set_defaults(histRgx="", graphBase="fitted")
+parser.set_defaults(histRgx="", graphBase="fitted", binVarRgx="", fixVarRgx="")
+
+
 args = parser.parse_args()
 
-ptBinning = [float(v) for v in args.ptBinning]
+varBinning = [float(v) for v in args.varBinning]
 
 """
 Script
@@ -67,10 +73,14 @@ Script
 from ROOT import TFile, TH2D, TGraphAsymmErrors, TF2, gROOT, TFitResult
 gROOT.SetBatch()
 
+# don't collect and fit histograms that are not needed
+fullMatchRgx = getAnyMatchRgx([args.histRgx, args.fixVarRgx, args.binVarRgx])
+
 inputF = TFile.Open(args.histFile, "update")
-histsToFit = collectHistograms(inputF, args.histRgx, TH2DCollector)
+histsToFit = collectHistograms(inputF, fullMatchRgx, TH2DCollector)
 lambdas = collectLambdas(histsToFit)
 
-createAndStoreGraphs(lambdas, args.graphBase, ptBinning, ["lth", "lph", "ltp"], inputF)
+createAndStoreGraphs(lambdas, args.graphBase, varBinning, args.binVarRgx, args.fixVarRgx,
+                     ["lth", "lph", "ltp"], inputF)
 
 inputF.Close()

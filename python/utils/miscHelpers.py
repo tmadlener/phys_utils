@@ -95,26 +95,39 @@ def getRapPtStr(fullName):
     return "_".join(["rap" + str(rap), "pt" + str(pt)])
 
 
+def getBinIdx(fullName, binVarRgx):
+    """
+    Get the bin index from the full name using a regular expression of the binned variable
+    """
+    rgx = r"".join([binVarRgx, "([0-9]+)"])
+    m = re.search(rgx, fullName)
+    if m:
+        return int(m.group(1))
+
+    print("Couldn't match regex to find index of binned variable: \'{}\' in \'{}\'".format(binVarRgx, fullName))
+    return -1
+
+
 def getRapPt(fullName):
     """
     Get the numerical values of the pt and rapidity bin by matching a regex against the
     passed full name.
     """
-    rapPtRgx = r"[Rr][Aa][Pp]_?([0-9]+)_[Pp][Tt]_?([0-9]+)"
-    m = re.search(rapPtRgx, fullName)
-    if m:
-        return[int(m.group(1)), int(m.group(2))]
+    rapIdx = getBinIdx(fullName, r"[Rr][Aa][Pp]_?")
+    ptIdx = getBinIdx(fullName, r"[Pp][Tt]_?")
 
-    print("Couldn't match regex to find rap and pt bin in \'{}\'".format(fullName))
-    return [0, 0]
+    if rapIdx < 0 or ptIdx < 0:
+        print("Couldn't match regex to find rap and pt bin in \'{}\'".format(fullName))
+
+    return[rapIdx, ptIdx]
+
 
 
 def removeRapPt(fullName):
     """
     Remove the rapX_ptY info from the fullName and return a new string
     """
-    [rap, pt] = getRapPt(fullName)
-    rapPtBinRgx = r"".join([r"[Rr][Aa][Pp]_?", str(rap), "_[Pp][Tt]_?", str(pt)])
+    rapPtBinRgx = r"[Rr][Aa][Pp]_?[0-9]+_[Pp][Tt]_?[0-9+]"
     return re.sub(rapPtBinRgx, "", fullName)
 
 
@@ -145,3 +158,12 @@ def sanitizeInputFileNames(inputfiles):
             inf.append("")
 
     return inputfiles
+
+
+def getAnyMatchRgx(rgxs):
+    """
+    Get a regex that matches all of the passed regexes without any special ordering using
+    positive lookahead
+    """
+    rgxList = flatten(['(?=.*', r, ')'] for r in rgxs if r) # get the lookahead for every rgx
+    return r''.join(rgxList)

@@ -6,15 +6,21 @@ Binning=JpsiBinning
 ptBinning="10 12 14 16 18 20 22 25 30 35 40 50 70"
 
 # ## B to J/psi K corrections
-# correctionData=BtoJpsiK_Seagulls
-# corrMapRgx="^bjpsik_corrmap"
+# correctionData=BtoJpsiK_Seagulls_odd
+correctionData=BtoJpsiK_fullSet_singMu_3p5_1rapBin
+corrMapRgx="^bjpsik_corrmap"
 
 ## NP corrections
-correctionData=inclusive_NP_2012_1rapBin
-corrMapRgx="^np_corrmap"
+# correctionData=inclusive_NP_2012_1rapBin_odd
+# corrMapRgx="^np_corrmap"
+
 
 inputData=inclusive_jpsi_full_1rapBin
+# inputData=inclusive_NP_2012_1rapBin_even
 dataHistRgx="^pr_costhphi"
+# dataHistRgx="^np_costhphi"
+# inputData=BtoJpsiK_Seagulls_even
+# dataHistRgx="^bjpsik_costhphi"
 
 # for relErrCut in 0.15 0.25 0.3 0.5 1.0; do
 # resultBase=${topDir}/DataResults/${Binning}/corr_${correctionData}_data_${inputData}/relErr_${relErrCut}
@@ -43,7 +49,7 @@ for ctBins in 32 16; do
       ${histDivider} --relerr-cut ${relErrCut} --numerator-base ${dataHistRgx} --denominator-base ${corrMapRgx} --output-base "corr_costhphi" ${dataFile} ${corrMapFile} ${outputFile}
 
       # fit histograms
-      ${histFitter} --histrgx "^corr_costhphi" --ptBinning ${ptBinning} --graphbase "result" ${outputFile}
+      ${histFitter} --histrgx "^corr_costhphi" --varBinning ${ptBinning} --graphbase "result" --fixedVariable "rap" --binVariable "pt" ${outputFile}
     done
     # calculate average of the individual fit results
     resultFile=${resultBase}/"result_graphs_"${binStr}".root"

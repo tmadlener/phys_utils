@@ -39,7 +39,7 @@ for ctBins in 32 16; do
     condExecute ${PLOT} mkdir -p ${outputDir}/${binStr}
     condExecute ${PLOT} ${histPlotter} --histrgx="^cosThPhi_refMap" --output=${outputDir}/${binStr}/ ${refMapsFile}
     # fit the reference maps, to get easily plottable TGraphAsymmErrors
-    condExecute ${FIT} ${histFitter} --ptBinning ${ptBinning} --histrgx="^cosThPhi_refMap" --graphbase="reference" ${refMapsFile}
+    condExecute ${FIT} ${histFitter} --varBinning ${ptBinning} --histrgx="^cosThPhi_refMap" --graphbase="reference" --fixedVariable="rap" --binVariable="pt" ${refMapsFile}
   done
 done
 
