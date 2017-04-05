@@ -1,5 +1,6 @@
 import os
 import re
+import numpy as np
 
 def condMkDir(path):
     """
@@ -167,3 +168,28 @@ def getAnyMatchRgx(rgxs):
     """
     rgxList = flatten(['(?=.*', r, ')'] for r in rgxs if r) # get the lookahead for every rgx
     return r''.join(rgxList)
+
+
+def parseVarBinning(binningStr):
+    """
+    Parse the variable binning from the command line argument (passed to this function)
+    Currently supported:
+    1) list of floating point numbers as strings
+    2) string in format 'X:Y:Z', the MATLAB format for getting a linearly spaced array of numbers
+    3) string in forma 'X:Z,N', a linearly spaced array including X and Z with N entries in total (MATLAB linspace)
+    Exits with value 1 if no parsing can be done
+    """
+    if len(binningStr) > 1:
+        return [float(v) for v in binningStr]
+
+    if re.search(r"(\d+(\.\d+):?){3}", binningStr[0]):
+        [minVal, step, maxVal] = binningStr[0].split(':')
+        return np.arange(float(minVal), float(maxVal), float(step))
+
+    if re.search(r"\d+(\.\d+):\d+(\.\d+),\d+", binningStr[0]):
+        tmp = binningStr[0].split(':')
+        tmp2 = tmp[1].split(',')
+        return np.linspace(float(tmp[0]), float(tmp2[0]), int(tmp2[1]))
+
+    print("Could not convert \'{}\' into a proper binning".format(binningStr))
+    []

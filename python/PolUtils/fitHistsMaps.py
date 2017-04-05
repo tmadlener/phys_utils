@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
+import re
 
 from utils.recurse import collectHistograms, TH2DCollector
-from utils.miscHelpers import getAnyMatchRgx
+from utils.miscHelpers import getAnyMatchRgx, parseVarBinning
 from utils.Fit_utils import createAndStoreGraphs
 
 def fitAngularDistribution(h):
@@ -64,8 +65,7 @@ parser.set_defaults(histRgx="", graphBase="fitted", binVarRgx="", fixVarRgx="")
 
 
 args = parser.parse_args()
-
-varBinning = [float(v) for v in args.varBinning]
+varBinning = parseVarBinning(args.varBinning)
 
 """
 Script

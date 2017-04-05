@@ -4,7 +4,7 @@ import argparse
 import re
 
 from utils.recurse import collectHistograms, TH1DCollector
-from utils.miscHelpers import filterDict, getRapPt
+from utils.miscHelpers import filterDict, getAnyMatchRgx, parseVarBinning, getBinIdx
 from utils.Fit_utils import createAndStoreGraphs
 
 def fitWcosThetaPhi(hCosth, hPhi):
@@ -53,7 +53,7 @@ def fitWPhi(h, lth):
             "lph": lph}
 
 
-def collectLambdas(hists):
+def collectLambdas(hists, fixVar, binVar):
     """
     Fit all the projections ending with '_costh' and '_phi' with the appropriate
     angular distributed and collect the labmdas into a dictionary with the same keys
@@ -62,7 +62,8 @@ def collectLambdas(hists):
     lambdas = {}
     for (nameCosTh, hCosth) in filterDict(hists, "_costh(_|$)").iteritems():
         hPhi = [h for n, h in filterDict(hists, "_phi(_|$)").iteritems()
-                if getRapPt(nameCosTh) == getRapPt(n)]
+                if getBinIdx(nameCosTh, fixVar) == getBinIdx(n, fixVar) and
+                   getBinIdx(nameCosTh, binVar) == getBinIdx(n, binVar)]
         if len(hPhi) == 1:
             lambdas[re.sub("_costh(_|$)", "", nameCosTh)] = fitWcosThetaPhi(hCosth, hPhi[0])
         else:
@@ -81,13 +82,18 @@ parser.add_argument('-hr', '--histrgx', help="Regex the histograms have to match
                     dest="histRgx", action="store", default="")
 parser.add_argument("--graphbase", "-g", help="Base name for the created graphs.",
                     dest="graphBase", action="store", default="proj_fit")
-parser.add_argument("--ptBinning", help="pt binning that should be used",
-                    dest="ptBinning", nargs="+", required=True)
+parser.add_argument("--varBinning", help="binning of the variable to be used",
+                    dest="varBinning", nargs="+", required=True)
+parser.add_argument("--binVariable", help="regex of the binned variable", dest="binVarRgx",
+                    action="store")
+parser.add_argument("--fixedVariable", help="regex of the fixed variable (i.e. each different index of this variable gets a new graph)",
+                    dest="fixVarRgx", action="store")
 
+parser.set_defaults(graphBase="fitted", binVarRgx="", fixVarRgx="")
 
 args = parser.parse_args()
 
-ptBinning = [float(v) for v in args.ptBinning]
+varBinning = parseVarBinning(args.varBinning)
 
 """
 Script
@@ -96,9 +102,12 @@ from ROOT import TFile, TH1D, TGraphAsymmErrors, TF1, gROOT
 gROOT.SetBatch()
 
 inputF = TFile.Open(args.histFile, "update")
-projections = collectHistograms(inputF, args.histRgx, TH1DCollector)
+fullMatchRgx = getAnyMatchRgx([args.histRgx, args.fixVarRgx, args.binVarRgx])
 
-createAndStoreGraphs(collectLambdas(projections), args.graphBase, ptBinning,
-                     ["lth", "lph"], inputF)
+projections = collectHistograms(inputF, fullMatchRgx, TH1DCollector)
+lambdas = collectLambdas(projections, args.fixVarRgx, args.binVarRgx)
+
+createAndStoreGraphs(lambdas, args.graphBase, varBinning,
+                     args.binVarRgx, args.fixVarRgx, ["lth", "lph"], inputF)
 
 inputF.Close()
