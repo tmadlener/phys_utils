@@ -229,3 +229,38 @@ def drawTH2DErrColMap(h, c):
 
     h.SetName("_".join([h.GetName(), "relErr"]))
     drawTH2DColMap(h, c)
+
+
+def rescaleHistToMax(h):
+    """
+    Rescale the histogram such that the maximum bin has content 1
+    """
+    maxBinCont = h.GetBinContent(h.GetMaximumBin())
+    if maxBinCont > 0:
+        h.Scale(1 / maxBinCont)
+    return h
+
+
+def rescaleHistToNorm(h, N = 1.0):
+    """
+    Rescale the histogram such that its integral is N
+    """
+    h.Scale(N / h.Integral())
+    return h
+
+def createTGAE(h):
+    """
+    Create a TGraphAsymmErrors from the passed histogram
+    """
+    from utils.TGraph_utils import createGraph
+    x = []
+    y = []
+    ex = []
+    ey = []
+    for i in range(1, h.GetNbinsX() + 1):
+        x.append(h.GetBinCenter(i))
+        y.append(h.GetBinContent(i))
+        ey.append(h.GetBinError(i))
+        ex.append(x[-1] - h.GetBinLowEdge(i))
+
+    return createGraph(x, y, ex, ex, ey, ey)
