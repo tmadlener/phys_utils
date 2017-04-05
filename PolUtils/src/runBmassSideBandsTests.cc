@@ -4,6 +4,7 @@
 #include "root_utils.h"
 #include "misc_utils.h"
 #include "JpsiFromBEvent.h"
+#include "referenceMapCreation.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -29,19 +30,25 @@ std::vector<TH2D*> createCosThHists(const int nMassBins, const std::string& fram
     std::stringstream hname;
     hname << "cosThPhi_" << frame << "_mass" << i;
     hists.push_back(new TH2D(hname.str().c_str(), "", 32, -1, 1, 32, -180, 180));
+    hists.back()->SetXTitle(("cos#theta^{" + frame + "}").c_str());
+    hists.back()->SetYTitle(("#phi^{" + frame + "}").c_str());
+    hists.back()->Sumw2(true);
   }
 
   return hists;
 }
 
 std::vector<TH1D*> create1DHists(const int nMassBins, const std::string& base,
-                                 const int nBins, const double min, const double max)
+                                 const int nBins, const double min, const double max,
+                                 const std::string& axislabel = "")
 {
   std::vector<TH1D*> hists;
   for (int i = 0; i < nMassBins; ++i) {
     std::stringstream hname;
     hname << base << "_mass" << i;
     hists.push_back(new TH1D(hname.str().c_str(), "", nBins, min, max));
+    hists.back()->SetXTitle(axislabel.c_str());
+    hists.back()->Sumw2(true);
   }
 
   return hists;
@@ -153,9 +160,18 @@ int main(int argc, char *argv[])
   JpsiFromBEvent event;
   event.Init(tin);
 
-  auto cosThHistsCS = createCosThHists(massBinning.size() - 1, "CS");
-  auto cosThHistsHX = createCosThHists(massBinning.size() - 1, "HX");
-  auto cosThHistsPX = createCosThHists(massBinning.size() - 1, "PX");
+  const size_t massBins = massBinning.size() - 1;
+  auto cosThHistsCS = createCosThHists(massBins, "CS");
+  auto cosThHistsHX = createCosThHists(massBins, "HX");
+  auto cosThHistsPX = createCosThHists(massBins, "PX");
+
+  auto cosThBJpsi = create1DHists(massBins, "cosThBJpsi", 50, -1, 1, "cos#Theta");
+  auto phiBJpsi = create1DHists(massBins, "phiBJpsi", 50, -180, 180, "#Phi");
+
+  auto bRapHists = create1DHists(massBins, "bRap", 50, -1.5, 1.5, "y^{B}");
+  auto jpsiRapHists = create1DHists(massBins, "jpsiRap", 50, -1.205, 1.205, "y^{J/#psi}");
+  auto bPtHists = create1DHists(massBins, "bPt", 50, 10, 70, "p_{T}^{B}");
+  auto jpsiPtHists = create1DHists(massBins, "jpsiPt", 50, 10, 70, "p_{T}^{J/#psi}");
 
   const int nEvents = tin->GetEntries();
   const auto startTime = ProgressClock::now();
@@ -171,6 +187,16 @@ int main(int argc, char *argv[])
     const auto anglesHX = calcAnglesInFrame(event.muNeg(), event.muPos(), RefFrame::HX);
     cosThHistsHX[massBin]->Fill(anglesHX.costh, anglesHX.phi);
 
+    auto cosThPhi = calcCosThetaPhiInBFrame(&event.bPlus(), &event.jpsi());
+    cosThBJpsi[massBin]->Fill(cosThPhi.first);
+    phiBJpsi[massBin]->Fill(cosThPhi.second);
+
+    bRapHists[massBin]->Fill(event.bPlus().Rapidity());
+    bPtHists[massBin]->Fill(event.bPlus().Pt());
+
+    jpsiRapHists[massBin]->Fill(event.jpsi().Rapidity());
+    jpsiPtHists[massBin]->Fill(event.jpsi().Pt());
+
     printProgress(i, nEvents, startTime, 5);
   }
 
@@ -178,6 +204,14 @@ int main(int argc, char *argv[])
   writeToFile(fout, cosThHistsCS);
   writeToFile(fout, cosThHistsHX);
   writeToFile(fout, cosThHistsPX);
+
+  writeToFile(fout, cosThBJpsi);
+  writeToFile(fout, phiBJpsi);
+
+  writeToFile(fout, bRapHists);
+  writeToFile(fout, bPtHists);
+  writeToFile(fout, jpsiRapHists);
+  writeToFile(fout, jpsiPtHists);
 
   fout->Close();
 

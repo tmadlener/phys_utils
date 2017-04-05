@@ -1,5 +1,5 @@
 {
-    "output_basedir": "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/Preparation/BmassFit/Full2012_singMu_3p5/",
+    "output_basedir": "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/Preparation/BmassFit/ctauSig_2p0_Bvtx_0p1_Fid16/",
 
     "ptBinRange": [1,12],
     "rapBinRange": [1,1],
@@ -16,7 +16,8 @@
         {"runDataJpsiFromB": false},
         {"runWorkspaceJpsiFromB": false},
         {"runBmassFit": false},
-        {"runPlotBmassFit": false}
+        {"runPlotBmassFit": true},
+        {"runBmassSideBandsTests": false}
     ],
 
     "exe-config":
@@ -25,11 +26,10 @@
         [
             {"inputfiles":
              [
-                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012A.root",
-                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012B.root",
-                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012C.root",
-                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012D_patch.root",
-                 "/afs/hephy.at/data/tmadlener01/ChicPol/JpsiFromB/InputData/Processing/simp_exclusive/simp-v1-run2012D_nopatch.root"
+                 "/afs/hephy.at/data/kraetschmer03/JpsiFromB/files/noCuts/simp-v1-run2012A.root",
+                 "/afs/hephy.at/data/kraetschmer03/JpsiFromB/files/noCuts/simp-v1-run2012B.root",
+                 "/afs/hephy.at/data/kraetschmer03/JpsiFromB/files/noCuts/simp-v1-run2012C*.root",
+                 "/afs/hephy.at/data/kraetschmer03/JpsiFromB/files/noCuts/simp-v1-run2012D*.root"
              ]},
             {"outputfile": "tmpFiles/selEvents_data.root"}
         ],
@@ -43,14 +43,20 @@
         "runBmassFit":
         [
             {"input": "tmpFiles/backupWorkspace/ws_createWorkspace_JpsiFromB_rap0_pt0.root"},
-            {"output": "BmassFit_release_erfc_fix_jpsipi_3gaussians.root"}
+            {"output": "BmassFit_release_erfc_fix_jpsipi_3gaussian.root"}
         ],
 
         "runPlotBmassFit":
         [
-            {"input": "BmassFit_release_erfc_fix_jpsipi_3gaussians.root"},
-            {"pdfname": "BmassFit_release_erfc_fix_jpsipi_3gaussians_nSig_3.pdf"},
+            {"input": "BmassFit_release_erfc_fix_jpsipi_3gaussian.root"},
+            {"pdfname": "BmassFit_release_erfc_fix_jpsipi_3gaussian_nSig3.pdf"},
             {"nSig": 3.0}
+        ],
+
+        "runBmassSideBandsTests":
+        [
+            {"inputfile": "tmpFiles/selEvents_data.root"},
+            {"outputfile": "bMassSideBand_dists.root"}
         ]
     }
 }
