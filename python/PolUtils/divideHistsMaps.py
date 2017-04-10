@@ -7,42 +7,56 @@
 import math
 import argparse
 from functools import partial
+import re
 
 from utils.recurse import collectHistograms, TH2DCollector, TH1DCollector
 from utils.TH_utils import divide2D, compareCoverage, divide1D
-from utils.miscHelpers import getRapPtStr, getRapPt, removeRapPt, filterDict, filterDictNot
+from utils.miscHelpers import getRapPtStr, getRapPt, removeRapPt, filterDict, filterDictNot, getBinIdx
 
-def divideHistograms(numHists, denomHists, func = divide2D, algoName = ""):
+def divideHistograms(numHists, denomHists, func = divide2D, algoName = "", binVarRgx = None):
     """
     Divide all numHists by the denomHists based on their (rap, pt) info
     """
+    if binVarRgx:
+        getBinFunction = partial(getBinIdx, binVarRgx = binVarRgx)
+        removeBinStr = lambda n : re.sub(r"".join([binVarRgx, "[0-9]+"]), "", n)
+        getBinStr = lambda n: "".join([binVarRgx, str(getBinIdx(n, binVarRgx))])
+    else:
+        getBinFunction = getRapPt
+        removeBinStr = removeRapPt
+        getBinStr = getRapPtStr
+
     ratios = {}
     for (denomN, denomH) in denomHists.iteritems():
-        rapPt = getRapPt(denomN)
+        binIdx = getBinFunction(denomN)
         # get the list of all numerator candidates the have the same rap and pt bin
         # this should be enough for disambiguation, otherwise you have to filter before
-        numH = [h for n, h in numHists.items() if rapPt == getRapPt(n)]
+        numH = [h for n, h in numHists.items() if binIdx == getBinFunction(n)]
         if len(numH) == 1:
-            ratioN = "_".join([algoName, removeRapPt(numH[0].GetName()), "",
-                               removeRapPt(denomN), getRapPtStr(denomN)])
+            ratioN = "_".join([algoName, removeBinStr(numH[0].GetName()), "",
+                               removeBinStr(denomN), getBinStr(denomN)])
             if ratioN in ratios:
                 print("WARNING: {} already present in ratios. Replacing it.".format(ratioN))
             ratios[ratioN] = func(numH[0], denomH, ratioN)
         else:
-            print("Could not get (unambiguous) numerator histogram for {}. Got {} possible"
+            print("Could not get (unambiguous) numerator histogram for {}. Got {} possible "
                   "candidates. Skipping this histogram.".format(denomN, len(numH)))
 
     return ratios
 
 
-def storeRatioHists(f, hists, baseName = ""):
+def storeRatioHists(f, hists, baseName = "", binVarRgx = None):
     """
     Store passed histograms to passed file with the passed baseName
     """
     f.cd()
     for (name, h) in hists.iteritems():
         if baseName:
-            h.SetName("_".join([baseName, getRapPtStr(name)]))
+            if binVarRgx:
+                h.SetName("_".join([baseName, binVarRgx + str(getBinIdx(name, binVarRgx))]))
+            else:
+                h.SetName("_".join([baseName, getRapPtStr(name)]))
+
         h.Write()
 
 
@@ -76,6 +90,9 @@ parser.add_argument("--normalize", dest="normHists", help="Normalize histograms 
 parser.add_argument("--relerr-cut", "-rc", help="Specify a (lower) cut on the relative error of the "
                     "ratio. If the relative error is above this value, the bin will be set to zero.",
                     dest="relErrCut", default=None, action="store", type=float)
+parser.add_argument("--binVariable", "-br", help="Specifiy a variable regex in which the data is binned. "
+                    "If not passed a rapX_ptY binning is assumed", default=None, dest="binVariable",
+                    action="store")
 
 parser.set_defaults(numeratorBase="", denominatorBase="", outputBase="",
                     createCovMap=False, divideHists=True, normHists=False)
@@ -99,15 +116,15 @@ denomHists = collectHistograms(denomF, args.denominatorBase, TH2DCollector)
 outputF = TFile(args.outputFile, "recreate")
 if args.divideHists:
     divide = partial(divide2D, normalize=args.normHists, norm = 1, relErrCut = args.relErrCut)
-    ratioHists = divideHistograms(numHists, denomHists, divide, "ratio")
-    storeRatioHists(outputF, ratioHists, args.outputBase)
+    ratioHists = divideHistograms(numHists, denomHists, divide, "ratio", args.binVariable)
+    storeRatioHists(outputF, ratioHists, args.outputBase, args.binVariable)
 
 if args.createCovMap:
-    covMaps = divideHistograms(numHists, denomHists, compareCoverage, "covmap")
+    covMaps = divideHistograms(numHists, denomHists, compareCoverage, "covmap", args.binVariable)
     ofbase = "" # cannot simply pass args.outputBase, since that will overwrite possibly present ratio hists
     if args.outputBase:
         ofbase = "_".join(["covmap", args.outputBase])
-    storeRatioHists(outputF, covMaps, ofbase)
+    storeRatioHists(outputF, covMaps, ofbase, args.binVariable)
 
 
 # now do the TH1Ds
@@ -122,16 +139,16 @@ for proj in ["costh", "phi"]:
     projRgx = r"_" + proj + r"(_|$)"
     ratioHists = divideHistograms(filterDict(numHists, projRgx),
                                   filterDict(denomHists, projRgx),
-                                  divide1D, "ratio")
+                                  divide1D, "ratio", args.binVariable)
     storeRatioHists(outputF, ratioHists,
-                    "_".join([args.outputBase, proj]))
+                    "_".join([args.outputBase, proj]), args.binVariable)
 
 costhphiRgx = r"_(costh|phi)(_|$)"
 # Filter out all previously stored histograms and process them now
 ratioHists = divideHistograms(filterDictNot(numHists, costhphiRgx),
                               filterDictNot(denomHists, costhphiRgx),
-                                            divide1D, "ratio")
-storeRatioHists(outputF, ratioHists, args.outputBase)
+                                            divide1D, "ratio", args.binVariable)
+storeRatioHists(outputF, ratioHists, args.outputBase, args.binVariable)
 
 
 outputF.Close()
