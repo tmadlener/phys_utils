@@ -57,4 +57,16 @@ inline bool any(const C& v, P pred)
   return false;
 }
 
+/** create a vector with evenly spaced values between min and max (see MATLABs linspace). */
+template<typename T>
+std::vector<T> linspace(const T min, const T max, const size_t steps)
+{
+  std::vector<T> vals;
+  const T step = (max - min) / (steps - 1);
+  for (size_t i = 0; i < steps; ++i) {
+    vals.push_back(min + i * step);
+  }
+  return vals;
+}
+
 #endif
