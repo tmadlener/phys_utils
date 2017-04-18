@@ -3,6 +3,16 @@
 
 #include <array>
 
+/**
+ * Class fro parametrizing a polynomial dependence of a parameter, when the support points
+ * and the values at these support points are known.
+ * Tempalted in the number of used parameters; N - 1 is the degree of the used polynomial.
+ *
+ * Support points have to be known at construction, values at support points can be changed
+ * later on.
+ *
+ * The maximum degree currently is parabolic (higher won't compile and/or link)
+ */
 template<size_t N>
 class Parametrization {
 public:
@@ -12,10 +22,13 @@ public:
   /** set the values at the support points for a given parametrization. */
   void setVals(const std::array<double, N>& val) { m_val = val; }
 
-  /** evaluate the parametrization at the given point. */
+  /** evaluate the parametrization at the given point. (Implemented up to N = 3) */
   double eval(const double) const;
 
   const std::array<double, N>& getVal() const { return m_val; }
+
+  const std::array<double, N>& getSupport() const { return m_sup; }
+
 private:
   const std::array<double, N> m_sup; /**< support points. */
   std::array<double, N> m_val; /**< values at support points. */
@@ -23,8 +36,9 @@ private:
 
 
 // eval spezializations
+// for an "empty" parametrization return zero always
 template<>
-double Parametrization<0>::eval(const double) const { return 0; } // TODO: check if 0 is the right thing to do here
+double Parametrization<0>::eval(const double) const { return 0; }
 
 template<>
 double Parametrization<1>::eval(const double) const { return m_val[0]; }
@@ -63,6 +77,10 @@ struct AngularParameters {
   const double tp;
 };
 
+/**
+ * Parametrization of the three angular polarization parameters.
+ * Basically a wrapper class to encapsulate three parametrizations at once.
+ */
 template<size_t N, size_t M, size_t P>
 class AngularParametrization {
 public:
@@ -82,6 +100,10 @@ public:
   const std::array<double, N>& getValAL() const { return m_AL.getVal(); }
   const std::array<double, M>& getValAphi() const { return m_Aphi.getVal(); }
   const std::array<double, P>& getValAtp() const { return m_Atp.getVal(); }
+
+  const std::array<double, N>& getSupAL() const { return m_AL.getSupport(); }
+  const std::array<double, M>& getSupAphi() const { return m_Aphi.getSupport(); }
+  const std::array<double, P>& getSupAtp() const { return m_Atp.getSupport(); }
 
 private:
   Parametrization<N> m_AL;

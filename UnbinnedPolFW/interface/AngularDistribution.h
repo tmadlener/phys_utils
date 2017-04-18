@@ -3,6 +3,8 @@
 
 #include "AngularParameters.h"
 
+#include <cmath>
+
 /**
  * Angular distribution linear in polarization parameters
  */
