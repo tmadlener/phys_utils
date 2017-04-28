@@ -74,6 +74,9 @@ def setupLegend(legJson):
     leg.SetTextSize(legJson["textSize"])
     leg.SetBorderSize(legJson["borderSize"])
 
+    if "columns" in legJson:
+        leg.SetNColumns(legJson["columns"])
+
     return leg
 
 
@@ -123,7 +126,7 @@ def getMinMax(graph):
         if y > ymax:
             ymax = y
 
-        return [ymin, ymax]
+    return [ymin, ymax]
 
 
 def getMinMaxAll(graphDict):
@@ -161,6 +164,36 @@ def removeNans(graph):
     for i in reversed(remPoints):
         graph.RemovePoint(i)
         print('Removed point {} from graph {}, because x or y were nan'.format(i, graph.GetName()))
+
+
+def widenRange(minVal, maxVal, d = 0.1):
+    """
+    Get a slightly wider range for plotting to not have dots at the very edges of the plot
+    """
+    dMin = minVal * 0.1
+    dMax = maxVal * 0.1
+
+    # check if we have to add or subtract the deltaValue to have a wider range
+    minFact = 1 if minVal < 0 else -1
+    maxFact = 1 if maxVal > 0 else -1
+
+    return [minVal + minFact * dMin, maxVal + maxFact * dMax]
+
+
+def findMinMax(minVal, maxVal, singleRange):
+    """
+    Find the minimum and maximum value such that one of them is the singleRange.
+    If the singleRange lies inbetween the two values the range it is ignored
+    """
+    [wMin, wMax] = widenRange(minVal, maxVal) # get the "widened" range
+    if minVal < singleRange and maxVal > singleRange: # value inbetween min and max
+        return [wMin, wMax]
+
+    if minVal > singleRange: # if min is greater also max is
+        return [singleRange, wMax]
+    if maxVal < singleRange: # vice versa here
+        return [wMin, singleRange]
+
 
 
 """
@@ -204,10 +237,21 @@ for fn in json['inputfiles']:
 # if a 'global' yTitle is set, use it for every plot, else take the yTitle from each plot
 globYTitle = json["axes"]["yTitle"]
 
-# if the yRange is empty, get the min and max values of all graphs and use this as yRange
+globalYRange = True
+# check if a global y-range is set. (empty list in json)
+# teomporarily set the y-range such that all graphs could fit. adjust for each plot individually below
 if not json["axes"]["yRange"]:
-        [ymin, ymax] = getMinMaxAll(graphList)
-        json["axes"]["yRange"] = [ymin * 1.1, ymax * 1.1]
+    globalYRange = False
+
+singleRange = None # if only one range value is set, smartly decide if it's the min or the max
+if len(json["axes"]["yRange"]) == 1:
+        singleRange = json["axes"]["yRange"][0]
+
+# temporarily set (more or less) arbitrary values for min and max if necessary
+if not globalYRange or singleRange is not None:
+    [ymin, ymax] = getMinMaxAll(graphList)
+    json["axes"]["yRange"] = [ymin, ymax]
+
 
 """
 Plot all desired graphs
@@ -220,6 +264,10 @@ for plot in json["plots"]:
 
     plotHist = createPlotHisto(canvas, json["axes"])
     legend = setupLegend(json["legend"])
+
+    # reset the min and max values of the graphs in the plot
+    minY = float('inf')
+    maxY = float('-inf')
 
     plotCounter = 0 # needed to have different markers for graphs from different files
     for legEntryBase, graphs in graphList.iteritems():
@@ -245,6 +293,11 @@ for plot in json["plots"]:
                 legend.AddEntry(graph, legEntry, "ple")
                 plotCounter += 1
 
+                # update min and max
+                [mi, ma] = getMinMax(graph)
+                if mi < minY: minY = mi
+                if ma > maxY: maxY = ma
+
         if json["legend"]["draw"]:
             legend.Draw()
         canvas.Update()
@@ -255,8 +308,20 @@ for plot in json["plots"]:
             text.SetTextSize(textJson["textSize"])
             text.Draw("same")
 
+
         if plot["file"]: # if a filename is specified use it
             filename = "".join([json["outbase"], "_", plot["file"], ".pdf"])
         else: # else use the name of the first graph as filename
             filename = "".join([json["outbase"], "_", plot["graphs"][0], ".pdf"])
-        canvas.SaveAs(filename)
+
+
+    # do we have a global y-range or do we want a plot specific one?
+    if not globalYRange:
+        [minY, maxY] = widenRange(minY, maxY, 0.1)
+        plotHist.GetYaxis().SetRangeUser(minY , maxY)
+
+    if singleRange is not None:
+        [minY, maxY] = findMinMax(minY, maxY, singleRange)
+        plotHist.GetYaxis().SetRangeUser(minY, maxY)
+
+    canvas.SaveAs(filename)
