@@ -74,3 +74,16 @@ def collectHistograms(f, basename, coll):
     hColl = coll(basename)
     recurseOnFile(f, hColl)
     return hColl.objects
+
+
+def collectGraphs(f, basename):
+    """
+    Collect all graphs from file matching basename
+    """
+    class TGraphCollector(ObjectCollector):
+        def __init__(self, rgx):
+            ObjectCollector.__init__(self, rgx, "TGraphAsymmErrors")
+
+    coll = TGraphCollector(basename)
+    recurseOnFile(f, coll)
+    return coll.objects
