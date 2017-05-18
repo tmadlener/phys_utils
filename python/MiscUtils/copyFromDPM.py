@@ -15,8 +15,29 @@ def listSubDirs(directory):
 
     return subDirs
 
+def isFilePresent(dpmFilePath, destPath, forceRemove):
+    fileName = dpmFilePath.split('/')[-1]
+    destFile = '/'.join([destPath, fileName])
+    filePresent = os.path.isfile(destFile)
+    if filePresent:
+        if args.verbosity > 0 and not forceRemove:
+            print("File \'{0}\' is already present in \'{1}\'".format(fileName, destPath))
+        if forceRemove:
+            os.remove(destFile)
+            return False # file was present but now is removed
+
+        return True # if file present and not removed
+
+    return False # if not present return false
+
+
+
+
 
 def copySingleFile((fullPath, destPath)):
+    global cpCounter
+    if isFilePresent(fullPath, destPath, args.force): return
+
     cp_cmd = 'xrdcp -P -N root://hephyse.oeaw.ac.at'
     xrdcp = sp.Popen(["{0}/{1} {2}".format(cp_cmd, fullPath, destPath)], shell=True)
     if args.verbosity > 0:
@@ -24,9 +45,16 @@ def copySingleFile((fullPath, destPath)):
         # COULDDO: locking for printing
         curWorker = multiprocessing.current_process()
         print("Copying file \'{0}\' to \'{1}\' using worker {2}".format(fullPath, destPath,
-                                                                           curWorker.name))
+                                                                        curWorker.name))
+    with cpCounter.get_lock(): # increase copy-counter
+        cpCounter.value += 1
 
     xrdcp.wait() # wait for process to finish
+
+
+def initPool(counter):
+    global cpCounter
+    cpCounter = counter
 
 
 def copyFiles(fileListGen, destBase, nThreads=4):
@@ -57,9 +85,12 @@ def copyFiles(fileListGen, destBase, nThreads=4):
     destForFile = (getResDir(f) for f in fileList)
     fileDestList = zip(fileList, destForFile)
 
-    copyPool = multiprocessing.Pool(nThreads)
+    counter = multiprocessing.Value('i', 0)
+
+    copyPool = multiprocessing.Pool(nThreads, initializer = initPool, initargs = (counter,))
     copyPool.map(copySingleFile, fileDestList)
 
+    print('Copied {0} files'.format(counter.value))
 
 class DPMDirBuilder():
     """
@@ -121,6 +152,8 @@ if __name__ == '__main__':
                         help='number of threads to be used for copying')
     parser.add_argument('-u', '--user', action='store', dest='user', default='thmadlen',
                         help='user name on dpm')
+    parser.add_argument('-f', '--force', help='Force copying even if file is already present',
+                        action='store_true', default=False)
 
     args = parser.parse_args()
 
