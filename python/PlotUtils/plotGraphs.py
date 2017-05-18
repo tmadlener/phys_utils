@@ -189,18 +189,27 @@ def findMinMax(minVal, maxVal, singleRange):
     if minVal < singleRange and maxVal > singleRange: # value inbetween min and max
         return [wMin, wMax]
 
-    if minVal > singleRange: # if min is greater also max is
+    if minVal >= singleRange: # if min is greater also max is
         return [singleRange, wMax]
-    if maxVal < singleRange: # vice versa here
+    if maxVal <= singleRange: # vice versa here
         return [wMin, singleRange]
 
 
+def getMarkerSize(style, size):
+    """Get the marker size. Some styles have to be adjusted for a more even picture"""
+    if style == 33 or style == 27:
+        return size * 1.5
+
+    return size
 
 """
 Arg parser
 """
 parser = argparse.ArgumentParser(description='script for plotting TGraphs')
 parser.add_argument('jsonFile', help='json file containing the main configuration that can be overriden by other args')
+parser.add_argument('-v', '--verbose', action='store_true', dest='verbose', default=False,
+                    help='verbose printing of what the script is just doing')
+
 args = parser.parse_args()
 
 
@@ -208,7 +217,9 @@ args = parser.parse_args()
 ROOT setup
 """
 import ROOT as r
-r.gROOT.ProcessLine("gErrorIgnoreLevel = 1001")
+if not args.verbose:
+    r.gROOT.ProcessLine("gErrorIgnoreLevel = 1001")
+
 r.gROOT.SetBatch()
 
 
@@ -216,6 +227,7 @@ r.gROOT.SetBatch()
 Json file read in
 """
 with open(args.jsonFile) as f:
+    if args.verbose: print("Reading json file")
     json = json.loads(f.read())
 
 
@@ -225,14 +237,17 @@ Collect Graphs from file
 # collect all the graphs, regardless of their later usage
 graphList = dict()
 for fn in json['inputfiles']:
+    if args.verbose: print("Trying to open root file: \'{0}\'".format(fn[0]))
     f = r.TFile.Open(fn[0]) # the 0 element contains the full path to the filename
     # only try to collect plots when the file exists (TFile::Open() emits a warning if not)
     if f:
+        if args.verbose: print('Collecting graphs from file')
         gColl = GraphCollector()
         recurseOnFile(f, gColl, lambda d: gColl.setPath(d))
 
         graphList[fn[1]] = gColl.getDict()
         f.Close()
+
 
 # if a 'global' yTitle is set, use it for every plot, else take the yTitle from each plot
 globYTitle = json["axes"]["yTitle"]
@@ -272,6 +287,7 @@ for plot in json["plots"]:
     plotCounter = 0 # needed to have different markers for graphs from different files
     for legEntryBase, graphs in graphList.iteritems():
         for i in range(len(plot["graphs"]) / 2): # even elements are graph names, odd are legend entry additions
+            if args.verbose: print("Checking if \'{0}\' is in collected graphs".format(plot["graphs"][2*i]))
             if plot["graphs"][2*i] in graphs: # only plot if the graph has been collected from the file
                 graph = graphs[plot["graphs"][2*i]]
                 removeNans(graph)
@@ -279,7 +295,8 @@ for plot in json["plots"]:
                 [col, style] = getColorAndStyle(plotCounter, json["markers"])
                 graph.SetMarkerColor(col)
                 graph.SetMarkerStyle(style)
-                graph.SetMarkerSize(json["markers"]["size"])
+                markerSize = getMarkerSize(style, json["markers"]["size"])
+                graph.SetMarkerSize(markerSize)
                 graph.SetLineColor(col)
 
                 graph.Draw('P')
@@ -289,6 +306,8 @@ for plot in json["plots"]:
                         legEntry = ", ".join([legEntryBase, plot["graphs"][2*i + 1]])
                     else:
                         legEntry = plot["graphs"][2*i +1]
+
+                if args.verbose: print("Found. Plotting. Legend entry: \'{0}\'".format(legEntry))
 
                 legend.AddEntry(graph, legEntry, "ple")
                 plotCounter += 1
@@ -313,7 +332,6 @@ for plot in json["plots"]:
             filename = "".join([json["outbase"], "_", plot["file"], ".pdf"])
         else: # else use the name of the first graph as filename
             filename = "".join([json["outbase"], "_", plot["graphs"][0], ".pdf"])
-
 
     # do we have a global y-range or do we want a plot specific one?
     if not globalYRange:
