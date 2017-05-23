@@ -94,10 +94,16 @@ void printProgressImpl<PrintStyle::ProgressBar>(const size_t&, const size_t&,
                                                 const SimpleTime& elaps,
                                                 const SimpleTime& remain, std::ostream&)
 {
-  const int complete = static_cast<int>(compFrac * 100);
-  std::cout << "\r (" << std::setw(3) << complete << "%) " // progress
-            <<"[" << std::string(complete, '=') << std::string(100 - complete, ' ') << "]"; // bar
-  if (complete < 100) {
+  constexpr int barWidth = 50;
+  constexpr char fChar = '#'; // char to be used for completed fraction of bar
+  constexpr char eChar = ' '; // char to be used for uncompleted fraction of bar
+
+  const int complete = static_cast<int>(compFrac * barWidth); // completeness in units of progbar width
+
+  std::cout << "\r (" << std::setw(4) << static_cast<int>(compFrac * 100) << "%) " // progress
+            <<"[" << std::string(complete, fChar) << std::string(barWidth - complete, eChar) << "]"; // bar
+
+  if (complete < barWidth) {
     std::cout << " " << remain << " (remaining)" << std::flush;
   } else {
     std::cout << " " << elaps  << " (elapsed)  " << std::endl; // (automatic new line when completed)
