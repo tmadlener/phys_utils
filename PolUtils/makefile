@@ -1,9 +1,22 @@
-ROOTLIBS=$(shell root-config --libs)
-# ROOTINCS=-I$(shell root-config --incdir) # already contained in --cflags
-ROOTCXXFLAGS=$(shell root-config --cflags)
+# check if we are on a heplx and set the path accordingly if so
+# this allows me to compile remotely from inside emacs using tramp
+ifneq (,$(findstring oeaw.ac.at,$(HOSTNAME)))
+export PATH=$(MAKE_PATH)
+export LD_LIBRARY_PATH=$(MAKE_LD_LIBRARY_PATH)
+GCC_BASE_DIR=$(MAKE_ROOT_GCC_TOOLCHAIN)/bin/
+ROOT_CONFIG_BIN=$(MAKE_ROOT_CONFIG_BIN)
+else
+GCC_BASE_DIR=
+ROOT_CONFIG_BIN=$(shell which root-config)
+endif
+
+ROOTLIBS=$(shell $(ROOT_CONFIG_BIN) --libs)
+ROOTCXXFLAGS=$(shell $(ROOT_CONFIG_BIN) --cflags)
+
 CXXFLAGS=-std=c++11 -Wall -Wextra -Wpedantic -Wshadow -O2 # -Wconversion # can't use conversion warnings, because there are a lot in ROOT
 ROOFITLIBS=-lRooFit -lRooFitCore -lMinuit -lFoam
-CXX=g++
+
+CXX=$(GCC_BASE_DIR)g++
 
 INCS=-I./interface -I../ -I.
 
