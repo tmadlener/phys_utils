@@ -44,17 +44,28 @@ std::ostream& operator<<(std::ostream& os, const SimpleTime& time)
 /** typedef to have a common type throughout all the uses. (And also less typing effort) */
 using ProgressClock = std::chrono::high_resolution_clock;
 
+enum class PrintStyle {
+  ProgressBar, /**< (simple) progress bar. */
+  ProgressText /**< slightly more detailed info, each printout with new line. */
+};
+
+template<PrintStyle S>
+void printProgressImpl(const size_t& i, const size_t& N, const double compFrac,
+                       const SimpleTime& elaps, const SimpleTime& remain, std::ostream&);
+
 /**
  * Print the progress of a process assuming that there are N total steps and i is the current step.
  * Also prints the elapsed time assuming that the processing startet at the startTime and an estimate of the remaining time.
  *
  * The nPrints variable controls how many printouts there will be and the os can be used to redirect the printout to any ostream.
  */
-template<typename ClockType = ProgressClock>
-void printProgress(const size_t& i, const size_t& N, const typename ClockType::time_point startTime, const size_t& nPrints = 100,
+template<PrintStyle Style = PrintStyle::ProgressBar, typename ClockType = ProgressClock>
+void printProgress(const size_t& i, const size_t& N, const typename ClockType::time_point& startTime, const size_t& nPrints = 100,
                    std::ostream& os = std::cout)
 {
-  if (i % (N / nPrints)) return; // only print if desired
+  if (i != N) { // print completed task
+    if (i % (N / nPrints)) return; // only print if desired
+  }
 
   using namespace std::chrono; // avoid typing effort
   const SimpleTime elapsedTime{duration_cast<seconds>(ClockType::now() - startTime).count()};
@@ -63,8 +74,34 @@ void printProgress(const size_t& i, const size_t& N, const typename ClockType::t
   const double compRatio = static_cast<double>(i) / N;
   const SimpleTime remainTime{static_cast<unsigned>(elapsedTime.count() / compRatio) - elapsedTime.count()};
 
-  os << "Processed " << i << " / " << N << " (" << std::setw(3) << compRatio * 100 << " %)."
-     << " Elapsed time: " << elapsedTime << ". Approx. " << remainTime << " remaining." << std::endl;
+
+  printProgressImpl<Style>(i, N, compRatio, elapsedTime, remainTime, os);
+}
+
+template<>
+void printProgressImpl<PrintStyle::ProgressText>(const size_t& i, const size_t&N,
+                                                 const double compFrac,
+                                                 const SimpleTime& elaps,
+                                                 const SimpleTime& remain, std::ostream& os)
+{
+  os << "Processed " << i << " / " << N << " (" << std::setw(3) << compFrac * 100 << " %)."
+     << " Elapsed time: " << elaps << ". Approx. " << remain << " remaining." << std::endl;
+}
+
+template<>
+void printProgressImpl<PrintStyle::ProgressBar>(const size_t&, const size_t&,
+                                                const double compFrac,
+                                                const SimpleTime& elaps,
+                                                const SimpleTime& remain, std::ostream&)
+{
+  const int complete = static_cast<int>(compFrac * 100);
+  std::cout << "\r (" << std::setw(3) << complete << "%) " // progress
+            <<"[" << std::string(complete, '=') << std::string(100 - complete, ' ') << "]"; // bar
+  if (complete < 100) {
+    std::cout << " " << remain << " (remaining)" << std::flush;
+  } else {
+    std::cout << " " << elaps  << " (elapsed)  " << std::endl; // (automatic new line when completed)
+  }
 }
 
 #endif

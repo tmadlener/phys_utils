@@ -61,6 +61,7 @@ void TTreeLooper<InEventT, OutEventT>::loop(CondF cond, const long int maxEvents
 
   size_t count{};
 
+  std::cout << "Looping over " << nEvents << "\n";
   auto startTime = std::chrono::high_resolution_clock::now();
   for (size_t i = 0; i < nEvents; ++i) {
     if (!checkGetEntry(m_inTree, i)) continue;
@@ -70,10 +71,10 @@ void TTreeLooper<InEventT, OutEventT>::loop(CondF cond, const long int maxEvents
       m_outTree->Fill();
       count++;
     }
-    printProgress(i, nEvents, startTime);
+    printProgress<PrintStyle::ProgressBar>(i, nEvents - 1, startTime); // -1 to reach 100 %
   }
 
-  std::cout << "number of reconstructed events: " << count << " of a total of " << nEvents << " events" << std::endl;
+  std::cout << "number of reconstructed events: " << count << " of a total of " << nEvents << " events\n";
 
   // m_outFile->Write();
   // m_outFile->Close();
