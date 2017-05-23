@@ -13,4 +13,4 @@ export PHYS_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PYTHONPATH=$PYTHONPATH:${PHYS_UTILS_DIR}/python
 
 ## build all the utilities in the PolUtils folder
-make -C $PHYS_UTILS_DIR/PolUtils -k -j4 all
+# make -C $PHYS_UTILS_DIR/PolUtils -k -j4 all
