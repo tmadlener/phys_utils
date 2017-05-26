@@ -192,4 +192,29 @@ def parseVarBinning(binningStr):
         return np.linspace(float(tmp[0]), float(tmp2[0]), int(tmp2[1]))
 
     print("Could not convert \'{}\' into a proper binning".format(binningStr))
-    []
+
+
+def createRandomString(n=32):
+    """
+    Create a random string containing upper and lower case letters as well as digits.
+    NOTE: not cryptographically safe (see https://stackoverflow.com/questions/2257441/
+    for more details)
+    """
+    from random import choice
+    from string import ascii_letters, digits
+    return ''.join(choice(ascii_letters + digits) for _ in range(n))
+
+
+def getPartialMatcher(word, minchars, wrap=False):
+    """
+    Get a regex expression to partially match word (requiring at least minchars)
+    characters to match at the beginning (see https://stackoverflow.com/questions/13405223/)
+    If wrap, the begin of string and end of string will be prepended (reps. appended)
+    """
+    rgx = '|'.join([word[:i] for i in range(len(word), minchars - 1, -1)])
+    rgx = ''.join(['(', rgx, ')']) # wrap in a group to have access to it from outside
+
+    if wrap:
+        rgx = r''.join(['^', rgx, '$'])
+
+    return rgx
