@@ -90,17 +90,17 @@ def _getPositionOnCanvas(pos):
         return defaultPosition
 
     # possible positions (i.e. currently implemented)
-    posStrings = ['bottom', 'top', 'left', 'right']
+    posStrings = ['bottom', 'top', 'left', 'right', 'center']
     # relative positions in canvas
     vertPositions = {'bottom': [0.1, 0.3], 'top': [0.7, 0.9]}
-    horPositions = {'left': [0.1, 0.4], 'right': [0.6, 0.9]}
+    horPositions = {'left': [0.1, 0.4], 'right': [0.6, 0.9], 'center': [0.35, 0.65]}
 
     getPos = lambda x,d : d[x] if x in d else None
 
     position = [None]*4
 
     for p in posStrings:
-        posMatcher = getPartialMatcher(p, 3) # need at least two chars to be unambiguous
+        posMatcher = getPartialMatcher(p, 3) # need at least three chars to be unambiguous
         if re.search(posMatcher, pos):
             vertPos = getPos(p, vertPositions)
             if vertPos:
@@ -122,6 +122,7 @@ def _getPositionOnCanvas(pos):
 
     return position
 
+
 def _setupLegend(position):
     """
     Set up a TLegend.
@@ -136,6 +137,21 @@ def _setupLegend(position):
     return legend
 
 
+def widenRange(minVal, maxVal, d=0.1):
+    """
+    Get a slightly wider range for plotting, so that the plot fits nicely and no data
+    points appear on the very edges of the plot
+    """
+    dMin = minVal * 0.1
+    dMax = maxVal * 0.1
+
+    # depending on the sign of the values we either have to add or subtract to get a wider range
+    minFact = 1 if minVal < 0 else -1
+    maxFact = 1 if maxVal > 0 else -1
+
+    return [minVal + minFact * dMin, maxVal + maxFact * dMax]
+
+
 def _getMinMax(plots):
     """
     Get min/max value of all passed plots along x- and y-direction.
@@ -147,14 +163,17 @@ def _getMinMax(plots):
     try:
         for p in plots:
             if p.InheritsFrom('TH1'):
-                minsX.append(p.GetBinLowEdge(0))
+                minsX.append(p.GetBinLowEdge(1)) # 0 is underflow bin
                 maxsX.append(p.GetBinLowEdge(p.GetNbinsX()) + p.GetBinWidth(p.GetNbinsX()))
                 minsY.append(p.GetBinContent(p.GetMinimumBin()))
                 maxsY.append(p.GetBinContent(p.GetMaximumBin()))
             elif p.InheritsFrom('TGraph'):
-                p.GetPoint(0, x, y)
-                minsX.append(x.real)
-                minsY.append(y.real)
+                for i in range(p.GetN()):
+                    p.GetPoint(i, x, y)
+                    minsX.append(x.real - p.GetErrorXlow(i))
+                    maxsX.append(x.real + p.GetErrorXhigh(i))
+                    minsY.append(y.real - p.GetErrorYlow(i))
+                    maxsY.append(y.real + p.GetErrorYhigh(i))
             elif p.InheritsFrom('TF1'):
                 minsX.append(p.GetXmin())
                 maxsX.append(p.GetXmax())
@@ -166,7 +185,9 @@ def _getMinMax(plots):
         print('Can\'t get min/max from object not inheriting from TH1, TF1 or TGraph')
         return None # don't handle this error, somewhere upstream this will fail
 
-    return [min(minsX), max(maxsX)], [min(minsY), max(maxsY)]
+    return [widenRange(min(minsX), max(maxsX)),
+            widenRange(min(minsY), max(maxsY))]
+
 
 def _setupPlotHist(canvas, xRange, yRange, plots, xlab, ylab):
     """
@@ -175,7 +196,10 @@ def _setupPlotHist(canvas, xRange, yRange, plots, xlab, ylab):
     only that one is used and the other is set to the min/max values of the plots
     in that direction
     """
-    if xRange is None and yRange is None:
+    # If a 'global' x and or y label is set, the frame is needed for displaying
+    # Similarly if we don't have a histogram the plot histo is needed for displaying
+    histInPlots = any([p.InheritsFrom('TH1') for p in plots])
+    if xRange is None and yRange is None and not ylab and not xlab and histInPlots:
         return None
 
     if xRange is None or yRange is None:
@@ -184,12 +208,44 @@ def _setupPlotHist(canvas, xRange, yRange, plots, xlab, ylab):
     x = xPlotRange if xRange is None else xRange
     y = yPlotRange if yRange is None else yRange
 
+    if canvas.GetLogx() == 1 and x[0] <= 0:
+        print('min value for x axis is {0} but logscale is set, setting it to 0.1'.format(xPlotRange[0]))
+        x[0] = 0.1
+    if canvas.GetLogy() == 1 and y[0] <= 0:
+        print('min value for y axis is {0} but logscale is set, setting it to 0.1'.format(xPlotRange[0]))
+        y[0] = 0.1
+
+
     plotHist = canvas.DrawFrame(x[0], y[0], x[1], y[1])
 
     if xlab: plotHist.SetXTitle(xlab)
     if ylab: plotHist.SetYTitle(ylab)
 
     return plotHist
+
+
+def _setupCanvas(**kwargs):
+    """
+    Setup a TCanvas for drawing
+    """
+    from utils.miscHelpers import createRandomString
+    from ROOT import TCanvas
+    canName = kwargs.pop('name', createRandomString())
+
+    size = kwargs.pop('size', [])
+    if len(size) < 2:
+        size = [800, 800]
+
+    can = TCanvas(canName, '', size[0], size[1])
+    # Set logscales here, since information is needed for setting up the plot histogram
+    can.SetLogy(kwargs.pop('logy', False))
+    can.SetLogx(kwargs.pop('logx', False))
+
+    if kwargs.pop('grid', False):
+        can.SetGridx()
+        can.SetGridy()
+
+    return can
 
 
 def mkplot(plots, **kwargs):
@@ -206,11 +262,7 @@ def mkplot(plots, **kwargs):
     - {x,y}range: define plotting range
     - {x,y}label: axis labels
     """
-    from utils.miscHelpers import createRandomString
-    from ROOT import TCanvas
-
-    # option handling
-    canName = kwargs.pop('name', createRandomString())
+    from collections import Iterable
 
     # collect all options as a list of tuples, to pass them on to the the plotOnCanvas
     # function
@@ -226,16 +278,13 @@ def mkplot(plots, **kwargs):
     if 'drawOpt' in kwargs: plotOptions.append(('drawOpt', kwargs.pop('drawOpt')))
 
 
-    size = kwargs.pop('size', [])
-    if len(size) < 2:
-        size = [800, 800]
+    if not isinstance(plots, Iterable): plots = [plots] # allow to pass a single plot
 
-    can = TCanvas(canName, '', size[0], size[1])
+    can = _setupCanvas(**dict(kwargs))
+
     plotHist = _setupPlotHist(can, kwargs.pop('xRange', None), kwargs.pop('yRange', None),
                               plots, kwargs.pop('xLabel', ''), kwargs.pop('yLabel', ''))
 
-    can.SetLogy(kwargs.pop('logy', False))
-    can.SetLogx(kwargs.pop('logx', False))
 
     plotOnCanvas(can, plots, **dict(plotOptions)).Draw()
 

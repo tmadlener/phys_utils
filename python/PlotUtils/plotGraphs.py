@@ -5,6 +5,7 @@ import json
 import math
 
 from utils.recurse import recurseOnFile
+from utils.plotHelpers import widenRange
 
 class GraphCollector(object):
     """
@@ -164,20 +165,6 @@ def removeNans(graph):
     for i in reversed(remPoints):
         graph.RemovePoint(i)
         print('Removed point {} from graph {}, because x or y were nan'.format(i, graph.GetName()))
-
-
-def widenRange(minVal, maxVal, d = 0.1):
-    """
-    Get a slightly wider range for plotting to not have dots at the very edges of the plot
-    """
-    dMin = minVal * 0.1
-    dMax = maxVal * 0.1
-
-    # check if we have to add or subtract the deltaValue to have a wider range
-    minFact = 1 if minVal < 0 else -1
-    maxFact = 1 if maxVal > 0 else -1
-
-    return [minVal + minFact * dMin, maxVal + maxFact * dMax]
 
 
 def findMinMax(minVal, maxVal, singleRange):
