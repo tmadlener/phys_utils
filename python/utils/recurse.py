@@ -66,6 +66,14 @@ class TH1DCollector(ObjectCollector):
         ObjectCollector.__init__(self, rgx, "TH1D")
 
 
+class HistCollector(ObjectCollector):
+    """
+    Collector object that collects everything inheriting from TH1 into a dict
+    """
+    def __init__(self, rgx):
+        ObjectCollector.__init__(self, rgx, 'TH1')
+
+
 def collectHistograms(f, basename, coll):
     """
     Collect all objects specified by coll  from TFile f, whose name matches basename and
