@@ -44,8 +44,8 @@ def divide2D(h, g, name = "", normalize = False, norm = 1, relErrCut = None):
         d = normalize2D(d, norm)
 
     # divide histograms bin by bin
-    for i in range(0, n.GetNbinsX() + 2):
-        for j in range(0, n.GetNbinsY() + 2):
+    for i in range(n.GetNbinsX() + 2):
+        for j in range(n.GetNbinsY() + 2):
             nBin = Bin(n.GetBinContent(i,j), n.GetBinError(i,j))
             dBin = Bin(d.GetBinContent(i,j), d.GetBinError(i,j))
             nBin.divide(dBin, relErrCut)
@@ -54,6 +54,7 @@ def divide2D(h, g, name = "", normalize = False, norm = 1, relErrCut = None):
     if name:
         n.SetName(name)
 
+    d.Delete() # just in case
     return n
 
 
@@ -119,8 +120,8 @@ class Bin:
             self.relErr2 = self.relErr2 + otherBin.relErr2
 
             if relErrCut and self.relErr2 > relErrCut**2:
-                print("Bin set to zero, due to resulting rel. err = {} (> {}). "
-                      "Ratio was {}".format(sqrt(self.relErr2), relErrCut, self.cont))
+                # print("Bin set to zero, due to resulting rel. err = {} (> {}). "
+                #       "Ratio was {}".format(sqrt(self.relErr2), relErrCut, self.cont))
                 self.cont = 0
                 self.relErr = 0
 
