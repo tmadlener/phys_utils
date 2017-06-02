@@ -49,3 +49,33 @@ def createAndStoreGraphs(lambdas, baseName, binning, binVarRgx, fixVarRgx,
             graph = createBinGraph(lambdas, "", binVarRgx, lam, binning)
             graph.SetName("_".join([baseName, lam]))
             graph.Write()
+
+
+def fitAngularDistribution(h, store=True):
+    """
+    Fit the angular distribution function to the histogram.
+    If store is set to True, the fitresult pointer is stored in the current TFile.
+    """
+    from ROOT import TF2, TFitResult
+    W = TF2("Wcosthphi",
+            "[0] * ("
+            "1.0 + [1]*x[0]*x[0] + [2]*(1.0-x[0]*x[0])*cos(2*x[1]*0.0174532925)"
+            "+ [3]*2*x[0]*sqrt(1-x[0]*x[0])*cos(x[1]*0.0174532925)"
+            ")",
+            -1.0, 1.0, -180.0, 180.0)
+    W.SetParameters(1.0, 0.0, 0.0, 0.0)
+
+    fitRlt = h.Fit(W, "S")
+    if int(fitRlt) == 0: # 0 indicates succesful fit
+        fitRlt.SetName("_".join([h.GetName(), "Wcosthphi_rlt"]))
+        if store:
+            fitRlt.Write()
+
+        return {"lth": [fitRlt.Parameter(1), fitRlt.Error(1)],
+                "lph": [fitRlt.Parameter(2), fitRlt.Error(2)],
+                "ltp": [fitRlt.Parameter(3), fitRlt.Error(3)]}
+    else:
+        print("Fit returned status {} for histogram {}".format(int(fitRlt), h.GetName()))
+        return {"lth": [-999, 999],
+                "lph": [-999, 999],
+                "ltp": [-999, 999]}

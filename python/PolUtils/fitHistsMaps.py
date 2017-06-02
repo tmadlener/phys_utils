@@ -5,31 +5,7 @@ import re
 
 from utils.recurse import collectHistograms, TH2DCollector
 from utils.miscHelpers import getAnyMatchRgx, parseVarBinning
-from utils.Fit_utils import createAndStoreGraphs
-
-def fitAngularDistribution(h):
-    """Fit the angular distribution function to the histogram"""
-    W = TF2("Wcosthphi",
-            "[0] * ("
-            "1.0 + [1]*x[0]*x[0] + [2]*(1.0-x[0]*x[0])*cos(2*x[1]*0.0174532925)"
-            "+ [3]*2*x[0]*sqrt(1-x[0]*x[0])*cos(x[1]*0.0174532925)"
-            ")",
-            -1.0, 1.0, -180.0, 180.0)
-    W.SetParameters(1.0, 0.0, 0.0, 0.0)
-
-    fitRlt = h.Fit(W, "S")
-    if int(fitRlt) == 0: # 0 indicates succesful fit
-        fitRlt.SetName("_".join([h.GetName(), "Wcosthphi_rlt"]))
-        fitRlt.Write()
-
-        return {"lth": [fitRlt.Parameter(1), fitRlt.Error(1)],
-                "lph": [fitRlt.Parameter(2), fitRlt.Error(2)],
-                "ltp": [fitRlt.Parameter(3), fitRlt.Error(3)]}
-    else:
-        print("Fit returned status {} for histogram {}".format(int(fitRlt), h.GetName()))
-        return {"lth": [-999, 999],
-                "lph": [-999, 999],
-                "ltp": [-999, 999]}
+from utils.Fit_utils import createAndStoreGraphs, fitAngularDistribution
 
 
 def collectLambdas(hists):
@@ -70,7 +46,7 @@ varBinning = parseVarBinning(args.varBinning)
 """
 Script
 """
-from ROOT import TFile, TH2D, TGraphAsymmErrors, TF2, gROOT, TFitResult
+from ROOT import TFile, TH2D, TGraphAsymmErrors, gROOT
 gROOT.SetBatch()
 
 # don't collect and fit histograms that are not needed
