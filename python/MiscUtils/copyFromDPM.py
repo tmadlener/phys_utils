@@ -15,6 +15,7 @@ def listSubDirs(directory):
 
     return subDirs
 
+
 def isFilePresent(dpmFilePath, destPath, forceRemove):
     fileName = dpmFilePath.split('/')[-1]
     destFile = '/'.join([destPath, fileName])
@@ -32,11 +33,13 @@ def isFilePresent(dpmFilePath, destPath, forceRemove):
 
 
 
-
-
 def copySingleFile((fullPath, destPath)):
     global cpCounter
-    if isFilePresent(fullPath, destPath, args.force): return
+    global presCounter
+    if isFilePresent(fullPath, destPath, args.force):
+        with presCounter.get_lock():
+            presCounter.value += 1
+        return
 
     cp_cmd = 'xrdcp -P -N root://hephyse.oeaw.ac.at'
     xrdcp = sp.Popen(["{0}/{1} {2}".format(cp_cmd, fullPath, destPath)], shell=True)
@@ -52,16 +55,20 @@ def copySingleFile((fullPath, destPath)):
     xrdcp.wait() # wait for process to finish
 
 
-def initPool(counter):
+def initPool(counter, pCounter):
     global cpCounter
     cpCounter = counter
+    global presCounter
+    presCounter = pCounter
 
 
-def copyFiles(fileListGen, destBase, nThreads=4):
+def copyFiles(fileListGen, destBase, nThreads=4, dryrun=False):
     """
     Copy all files from the fileList while figuring out wher exactly in the destBase
     they should be stored
     """
+    from tqdm import tqdm
+
     print("Copying files, using {0} threads".format(nThreads))
     destDirList = os.listdir(destBase)
     destDirs = {} # make a map of job names to directories for easier lookup
@@ -85,12 +92,20 @@ def copyFiles(fileListGen, destBase, nThreads=4):
     destForFile = (getResDir(f) for f in fileList)
     fileDestList = zip(fileList, destForFile)
 
+    if dryrun:
+        print('Running would copy {0} files'.format(len(fileList)))
+        return
+
     counter = multiprocessing.Value('i', 0)
+    pCounter = multiprocessing.Value('i', 0)
 
-    copyPool = multiprocessing.Pool(nThreads, initializer = initPool, initargs = (counter,))
-    copyPool.map(copySingleFile, fileDestList)
+    copyPool = multiprocessing.Pool(nThreads, initializer = initPool, initargs = (counter,pCounter))
+    with tqdm(total=len(fileList), desc='Copying', ncols=70) as pbar:
+        for _ in copyPool.imap_unordered(copySingleFile, fileDestList):
+            pbar.update()
 
-    print('Copied {0} files'.format(counter.value))
+    print('Copied {0} files. {1} were already present and not overwritten'.format(counter.value, pCounter.value))
+
 
 class DPMDirBuilder():
     """
@@ -118,7 +133,7 @@ class DPMDirBuilder():
     def buildIndex(self):
         """Descend in every directory until the root files are found (then stop)"""
         # check if we already have root files, if so break out of recursion
-        if self.fileList[0].endswith('.root'):
+        if any(f.endswith('.root') for f in self.fileList):
             return self.fileList
 
         fullDirList = []
@@ -154,6 +169,8 @@ if __name__ == '__main__':
                         help='user name on dpm')
     parser.add_argument('-f', '--force', help='Force copying even if file is already present',
                         action='store_true', default=False)
+    parser.add_argument('--dryrun', dest='dryrun', default=False, action='store_true',
+                        help='Only get the number of files to copy, but don\'t actually copy them.')
 
     args = parser.parse_args()
 
@@ -168,4 +185,4 @@ if __name__ == '__main__':
         # not sure if there is actually any performance gain in making this a generator
         filesToCopy = (f for f in allFiles if inSubTaskList(f, args.subtasks))
 
-    copyFiles(filesToCopy, args.resbase, args.nThreads)
+    copyFiles(filesToCopy, args.resbase, args.nThreads, args.dryrun)
