@@ -104,7 +104,7 @@ void printProgressImpl<PrintStyle::ProgressBar>(const size_t&, const size_t&,
             <<"[" << std::string(complete, fChar) << std::string(barWidth - complete, eChar) << "]"; // bar
 
   if (complete < barWidth) {
-    std::cout << " " << remain << " (remaining)" << std::flush;
+    std::cout << " " << elaps << " < " << remain << std::flush;
   } else {
     std::cout << " " << elaps  << " (elapsed)  " << std::endl; // (automatic new line when completed)
   }
