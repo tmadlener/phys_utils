@@ -224,7 +224,7 @@ def _setupPlotHist(canvas, xRange, yRange, plots, xlab, ylab):
     return plotHist
 
 
-def _setupCanvas(**kwargs):
+def _setupCanvas(can, **kwargs):
     """
     Setup a TCanvas for drawing
     """
@@ -236,14 +236,15 @@ def _setupCanvas(**kwargs):
     if len(size) < 2:
         size = [800, 800]
 
-    can = TCanvas(canName, '', size[0], size[1])
+    if can is None:
+        can = TCanvas(canName, '', size[0], size[1])
+    can.Clear()
     # Set logscales here, since information is needed for setting up the plot histogram
     can.SetLogy(kwargs.pop('logy', False))
     can.SetLogx(kwargs.pop('logx', False))
 
     if kwargs.pop('grid', False):
-        can.SetGridx()
-        can.SetGridy()
+        can.SetGrid()
 
     return can
 
@@ -257,18 +258,36 @@ def mkplot(plots, **kwargs):
     - ret: return the created TCanvas after plotting (default false)
     - name: create the TCanvas with the passed name instead of a random string
     - leg: draw a legend (using the names of the objects if no list of legend entries is
-    passed). It is sufficient to pass only the legEntries if a legend is wanted
+    passed). It is sufficient to pass only the legEntries if a legend is wanted. Also if
+    the plots are passed as a dict the keys will automatically be used as legend entries
     - legEntries: list of keys to be used in the legend
-    - {x,y}range: define plotting range
-    - {x,y}label: axis labels
+    - legPos: position of legend in plot.
+       Possible horizontal positions: 'right', 'left', 'center',
+       Possible vertical positions: 'top', 'bottom'
+       Strings can apear in any order and concatenated as well as abbreviated as long as
+       three characters are used for each position argument. Default is 'bottom right'
+    - {x,y}Range: define plotting range
+    - {x,y}Label: axis labels
+    - drawOpt: additional (ROOT) draw options to be passed to the Draw() method
+    - useCan: use an existing canvas instead of creating a new one
+    - colors: override default colors. List of VALID colors indices in ROOTs color index
     """
     from collections import Iterable
 
     # collect all options as a list of tuples, to pass them on to the the plotOnCanvas
     # function
+    if not isinstance(plots, Iterable): plots = [plots] # allow to pass a single plot
+
+    # if plots is a dictionary, automatically use the keys as legend entries, unless
+    # they have already been specified by the corresponding argument
+    legEntries = kwargs.pop('legEntries', [])
+    if isinstance(plots, dict):
+        if not legEntries: # first get keys, since plots won't be a dict after getting the values
+            legEntries = plots.keys()
+        plots = plots.values()
+
     plotOptions = []
 
-    legEntries = kwargs.pop('legEntries', [])
     if legEntries or kwargs.pop('leg', False):
         legend = _setupLegend(kwargs.pop('legPos', ''))
         plotOptions.append(('leg', legend))
@@ -276,11 +295,10 @@ def mkplot(plots, **kwargs):
         plotOptions.append(('legEntries', legEntries))
 
     if 'drawOpt' in kwargs: plotOptions.append(('drawOpt', kwargs.pop('drawOpt')))
+    if 'colors' in kwargs: plotOptions.append(('colors', kwargs.pop('colors')))
 
-
-    if not isinstance(plots, Iterable): plots = [plots] # allow to pass a single plot
-
-    can = _setupCanvas(**dict(kwargs))
+    existingCan = kwargs.pop('useCan', None)
+    can = _setupCanvas(existingCan, **dict(kwargs))
 
     plotHist = _setupPlotHist(can, kwargs.pop('xRange', None), kwargs.pop('yRange', None),
                               plots, kwargs.pop('xLabel', ''), kwargs.pop('yLabel', ''))
@@ -288,7 +306,7 @@ def mkplot(plots, **kwargs):
 
     plotOnCanvas(can, plots, **dict(plotOptions)).Draw()
 
-    if kwargs.pop('ret', False):
+    if kwargs.pop('ret', False) or existingCan is not None:
         return can
     else:
         global _drawCanvas
