@@ -74,7 +74,7 @@ class HistCollector(ObjectCollector):
         ObjectCollector.__init__(self, rgx, 'TH1')
 
 
-def collectHistograms(f, basename, coll):
+def collectHistograms(f, basename, coll=HistCollector):
     """
     Collect all objects specified by coll  from TFile f, whose name matches basename and
     return them in a dict with the names as the keys and the objects as value
