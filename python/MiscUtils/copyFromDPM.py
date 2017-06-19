@@ -118,13 +118,31 @@ class DPMDirBuilder():
         self.currentDir = ''
 
         availDirs = listSubDirs(self.basedir)
+        if not availDirs:
+            print('{0} does not exist.'.format(self.basedir))
+            sys.exit(1)
+
         if taskname in availDirs:
             self.fileList.append(taskname)
         else:
             print("{0} not found in {1}".format(taskname, self.basedir))
             print("Content:")
-            for d in availDirs: print(d)
-            sys.exit(1)
+            for (i,d) in enumerate(availDirs):
+                print('[{0}]: {1}'.format(i, d))
+
+            while True:
+                inp = raw_input('Choose from above or \'q\' to quit: ')
+                if inp.upper() == 'Q':
+                    sys.exit(1)
+                else:
+                    try:
+                        dec = int(inp)
+                        if dec >= len(availDirs): raise ValueError
+                        break
+                    except ValueError:
+                        print('Enter number between 0 and {0} or \'q\' to quit'.format(len(availDirs) - 1))
+
+            self.fileList.append(availDirs[dec])
 
         print('Building index')
         self.buildIndex()
@@ -154,6 +172,24 @@ class DPMDirBuilder():
 
 
 
+def getFilesToCopy(allFiles, subtasks, excltasks):
+    """
+    Get the list (generator) of files that should actually be copied from all the files in the index.
+    """
+    if subtasks is None and excltasks is None:
+        return allFiles
+
+    # check if any of the specified subtasks is actually in the filename
+    inSubTaskList = lambda x, l: any(t for t in l if t in x)
+
+    if subtasks is None:
+        return (f for f in allFiles if not inSubTaskList(f, excltasks))
+    if excltasks is None:
+        return (f for f in allFiles if inSubTaskList(f, subtasks))
+
+    return (f for f in allFiles if inSubTaskList(f, subtasks) and not inSubTaskList(f, excltasks))
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='script for copying from dpm')
@@ -171,18 +207,14 @@ if __name__ == '__main__':
                         action='store_true', default=False)
     parser.add_argument('--dryrun', dest='dryrun', default=False, action='store_true',
                         help='Only get the number of files to copy, but don\'t actually copy them.')
+    parser.add_argument('-x', '--exclude-subtasks', action='store', nargs='+', dest='excltasks',
+                        help='Do not retrieve the sub-tasks listed here even if listed in the subtasks list')
 
     args = parser.parse_args()
 
     dirBuilder = DPMDirBuilder(args.taskname, args.user)
     allFiles = dirBuilder.getFileList()
 
-    if args.subtasks is None:
-        filesToCopy = allFiles
-    else:
-        # check if any of the specified subtasks is actually in the filename, and only if it is will it be copied
-        inSubTaskList = lambda x, l: any(t for t in l if t in x)
-        # not sure if there is actually any performance gain in making this a generator
-        filesToCopy = (f for f in allFiles if inSubTaskList(f, args.subtasks))
+    filesToCopy = getFilesToCopy(allFiles, args.subtasks, args.excltasks)
 
     copyFiles(filesToCopy, args.resbase, args.nThreads, args.dryrun)
