@@ -1,7 +1,7 @@
 #include "general/recurse.h"
 #include "general/root_utils.h"
 
-#include "string_stuff.h"
+#include "general/string_helper.h"
 
 #include "TFile.h"
 #include "TDirectory.h"
