@@ -10,14 +10,30 @@
 #include <array>
 #include <iostream> // debugging
 
-/** helper struct holding the expectation values of the different parts needed. */
+/**
+ * typedef used for the storage of the coefficients needed to calculate the squared
+ * expecation value.
+ */
+template<size_t N>
+using SqSumMatrix = std::array<std::array<double, N>, N>;
+
+/**
+ * helper struct holding the expectation values of the different parts needed.
+ * Also holds the coefficients needed to calculate the squared expectation value
+ */
 template<size_t N, size_t M, size_t P>
 struct PartialExpValues {
-  const double ct2;
-  const std::array<double, N> AL;
-  const std::array<double, N> AL_ct2;
-  const std::array<double, M> Aphi_st2c2p;
-  const std::array<double, P> Atp_s2tcp;
+  const double ct2{};
+  const std::array<double, N> AL{};
+  const std::array<double, N> AL_ct2{};
+  const std::array<double, M> Aphi_st2c2p{};
+  const std::array<double, P> Atp_s2tcp{};
+
+  // Not yet filled anywhere!
+  const SqSumMatrix<N> sqAL{};
+  const SqSumMatrix<N> sqAL_ct2{};
+  const SqSumMatrix<M> sqAphi_st2c2p{};
+  const SqSumMatrix<P> sqAtp_s2tcp{};
 };
 
 /** helper struct */
@@ -111,11 +127,32 @@ void addWeighted(std::array<double, N>& sums, const std::array<double, N>& summa
   }
 }
 
+/** add the summands to the sums multiplied by the passed weight. */
+template<size_t N>
+void addWeighted(SqSumMatrix<N>& sums, const SqSumMatrix<N>& summands,
+                 const double weight = 1)
+{
+  for (size_t i = 0; i < N; ++i) {
+    for (size_t j = 0; j < N; ++j) {
+      sums[i][j] += summands[i][j] * weight;
+    }
+  }
+}
+
 /** rescale all entries by factor n. */
 template<size_t N>
 void rescale(std::array<double, N>& a, const double n)
 {
   for (auto& e : a) e /= n;
+}
+
+/** rescale all entries by factor n. */
+template<size_t N>
+void rescale(SqSumMatrix<N>& m, const double n)
+{
+  for (auto& a : m) {
+    rescale(a, n);
+  }
 }
 
 /** calculate the needed variables from the angular variables stored in the tree. */
@@ -182,63 +219,68 @@ std::array<double, 3> getSupportExpValues(const std::array<double, 3>& expVals,
   return coeffs;
 }
 
-// /**
-//  * calculate the summands needed for the squared expectation value calculation
-//  *
-//  * constant (one support poine), summand is the square of the passed value
-//  */
-// std::array<double, 1> calcSquareSummands(const std::array<double, 1>&,
-//                                          const double, const double Y)
-// {
-//   return std::array<double, 1> { Y*Y };
-// }
+SqSumMatrix<0> calcSquareSummands(const std::array<double, 0>&, const double, const double)
+{
+  return SqSumMatrix<0>{};
+}
 
-// /**
-//  * calculate the summands needed for the squared expectation value calculation
-//  *
-//  * linear parametrization.
-//  * first element: (x - x2)^2 * Y^2
-//  * second element: (x - x1)^2 * Y^2
-//  * third element: (x - x1)*(x - x2) * Y^2
-//  */
-// std::array<double, 3> calcSquareSummands(const std::array<double, 2>& supports,
-//                                          const double x, const double Y)
-// {
-//   const auto supDiffs = calcSupportDiffs(supports, x);
+SqSumMatrix<1> calcSquareSummands(const std::array<double, 1>&,
+                                  const double, const double Y)
+{
+  return SqSumMatrix<1>{{ Y* Y }};
+}
 
-//   return std::array<double, 3> {
-//     supDiffs[1]*supDiffs[1] * Y*Y,
-//       supDiffs[0]*supDiffs[0] * Y*Y,
-//       supDiffs[0] * supDiffs[1] * Y*Y
-//       };
-// }
+/**
+ * [0][0] = (x - x2)^2 * Y^2
+ * [1][1] = (x - x1)^2 * Y^2
+ * [0][1] = [1][0] = (x - x1) * (x - x2) * Y^2
+ */
+SqSumMatrix<2> calcSquareSummands(const std::array<double, 2>& supports,
+                                  const double x, const double Y)
+{
+  const auto supDiffs = calcSupportDiffs(supports, x);
+  const double Ysq = Y*Y;
+  SqSumMatrix<2> mat{};
+  mat[0][0] = supDiffs[1]*supDiffs[1] * Ysq;
+  mat[1][1] = supDiffs[0]*supDiffs[0] * Ysq;
+  mat[0][1] = supDiffs[0]*supDiffs[1] * Ysq;
+  mat[1][0] = supDiffs[0]*supDiffs[1] * Ysq;
 
-// /**
-//  * calculate the summands needed for the squared expectation value calculation
-//  *
-//  * parabolic parametrization.
-//  * first element:  (x - x2)^2 * (x - x3)^2 * Y^2
-//  * second element: (x - x1)^2 * (x = x3)^2 * Y^2
-//  * third element:  (x - x1)^2 * (x - x2)^2 * Y^2
-//  * fourth element: -(x - x1) * (x - x2) * (x - x3)^2 * Y^2
-//  * fifth elment:   (x - x1) * (x - x2)^2 * (x - x3) * Y^2
-//  * sixth element:  -(x - x1)^2 *& (x - x2) * (x  x3) * Y^2
-//  */
-// std::array<double, 6> calcSquareSummands(const std::array<double, 3>& supports,
-//                                          const double x, const double Y)
-// {
-//   const auto supDiffs = calcSupportDiffs(supports, x);
-//   return std::array<double, 6> {
-//     supDiffs[1]*supDiffs[1] * supDiffs[2]*supDiffs[2] * Y*Y,
-//       supDiffs[0]*supDiffs[0] * supDiffs[2]*supDiffs[2] * Y*Y,
-//       supDiffs[0]*supDiffs[0] * supDiffs[1]*supDiffs[1] * Y*Y,
-//       -supDiffs[0] * supDiffs[1] * supDiffs[2]*supDiffs[2] * Y*Y,
-//       supDiffs[0] * supDiffs[1]*supDiffs[1] * supDiffs[2] * Y*Y,
-//       -supDiffs[0]*supDiffs[0] * supDiffs[1] *supDiffs[2] * Y*Y
-//       };
-// }
+  return mat;
+}
 
+/**
+ * [0][0] = (x - x2)^2 * (x - x3)^2 * Y^2
+ * [1][1] = (x - x1)^2 * (x - x3)^2 * Y^2
+ * [2][2] = (x - x1)^2 * (x - x2)^2 * Y^2
+ * [0][1] = [1][0] = (x - x2) * (x - x3) * (x - x1) * (x - x3) * Y^2
+ * [0][2] = [2][0] = (x - x2) * (x - x3) * (x - x2) * (x - x3) * Y^2
+ * [1][2] = [2][1] = (x - x1) * (x - x3) * (x - x1) * (x - x2) * Y^2
+ */
+SqSumMatrix<3> calcSquareSummands(const std::array<double, 3>& supports,
+                                  const double x, const double Y)
+{
+  const auto supDiffs = calcSupportDiffs(supports, x);
+  const double Ysq = Y*Y;
+  SqSumMatrix<3> mat{};
 
+  // diagonal
+  mat[0][0] = supDiffs[1]*supDiffs[1] * supDiffs[2]*supDiffs[2] * Ysq;
+  mat[1][1] = supDiffs[0]*supDiffs[0] * supDiffs[2]*supDiffs[2] * Ysq;
+  mat[2][2] = supDiffs[0]*supDiffs[0] * supDiffs[1]*supDiffs[1] * Ysq;
+
+  // off-diagonal
+  mat[0][1] = supDiffs[1] * supDiffs[2] * supDiffs[0] * supDiffs[2] * Ysq;
+  mat[1][0] = supDiffs[1] * supDiffs[2] * supDiffs[0] * supDiffs[2] * Ysq;
+
+  mat[0][2] = supDiffs[1] * supDiffs[2] * supDiffs[0] * supDiffs[1] * Ysq;
+  mat[2][0] = supDiffs[1] * supDiffs[2] * supDiffs[0] * supDiffs[1] * Ysq;
+
+  mat[1][2] = supDiffs[0] * supDiffs[2] * supDiffs[0] * supDiffs[1] * Ysq;
+  mat[2][1] = supDiffs[0] * supDiffs[2] * supDiffs[0] * supDiffs[1] * Ysq;
+
+  return mat;
+}
 
 template<size_t N, size_t M, size_t P>
 PartialExpValues<N,M,P> calcPartialExpVals(const AngularParametrization<N,M,P>& paramA, TTree* t,
@@ -256,10 +298,15 @@ PartialExpValues<N,M,P> calcPartialExpVals(const AngularParametrization<N,M,P>& 
 
   std::array<double, N> sumsAL{};
   std::array<double, N> sumsALcT2{};
-  std::array<double, M> sumsAphiST2cP{};
+  std::array<double, M> sumsAphiST2c2P{};
   std::array<double, P> sumsAtpS2TcP{};
   double sumCt2{};
   double sumWeight{};
+
+  SqSumMatrix<N> sqSumsAL{};
+  SqSumMatrix<N> sqSumsALcT2{};
+  SqSumMatrix<M> sqSumsAphiST2c2P{};
+  SqSumMatrix<P> sqSumsAtpS2TcP{};
 
   const int nEntries = t->GetEntries();
   for (int i = 0; i < nEntries; ++i) {
@@ -268,8 +315,13 @@ PartialExpValues<N,M,P> calcPartialExpVals(const AngularParametrization<N,M,P>& 
 
     addWeighted(sumsAL, calcSummands(paramA.getSupAL(), var, 1), weight);
     addWeighted(sumsALcT2, calcSummands(paramA.getSupAL(), var, angVars.cosTh2), weight);
-    addWeighted(sumsAphiST2cP, calcSummands(paramA.getSupAphi(), var, angVars.sinTh2cos2phi), weight);
+    addWeighted(sumsAphiST2c2P, calcSummands(paramA.getSupAphi(), var, angVars.sinTh2cos2phi), weight);
     addWeighted(sumsAtpS2TcP, calcSummands(paramA.getSupAtp(), var, angVars.sin2ThcosPhi), weight);
+
+    addWeighted(sqSumsAL, calcSquareSummands(paramA.getSupAL(), var, 1), weight);
+    addWeighted(sqSumsALcT2, calcSquareSummands(paramA.getSupAL(), var, angVars.cosTh2), weight);
+    addWeighted(sqSumsAphiST2c2P, calcSquareSummands(paramA.getSupAphi(), var, angVars.sinTh2cos2phi), weight);
+    addWeighted(sqSumsAtpS2TcP, calcSquareSummands(paramA.getSupAtp(), var, angVars.sin2ThcosPhi), weight);
 
     sumCt2 += angVars.cosTh2 * weight;
     sumWeight += weight;
@@ -278,14 +330,20 @@ PartialExpValues<N,M,P> calcPartialExpVals(const AngularParametrization<N,M,P>& 
   // calculate the expecation values
   rescale(sumsAL, sumWeight);
   rescale(sumsALcT2, sumWeight);
-  rescale(sumsAphiST2cP, sumWeight);
+  rescale(sumsAphiST2c2P, sumWeight);
   rescale(sumsAtpS2TcP, sumWeight);
+
+  rescale(sqSumsAL, sumWeight);
+  rescale(sqSumsALcT2, sumWeight);
+  rescale(sqSumsAphiST2c2P, sumWeight);
+  rescale(sqSumsAtpS2TcP, sumWeight);
+
   const double expCt2 = sumCt2 / sumWeight;
 
   return PartialExpValues<N, M, P>{expCt2,
       getSupportExpValues(sumsAL, paramA.getSupAL()),
       getSupportExpValues(sumsALcT2, paramA.getSupAL()),
-      getSupportExpValues(sumsAphiST2cP, paramA.getSupAphi()),
+      getSupportExpValues(sumsAphiST2c2P, paramA.getSupAphi()),
       getSupportExpValues(sumsAtpS2TcP, paramA.getSupAtp())};
 }
 
