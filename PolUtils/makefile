@@ -22,7 +22,10 @@ DEPS=$(LIST:%=%.d)
 
 -include $(DEPS)
 
-all: $(LIST)
+all: setup $(LIST)
+
+setup:
+	mkdir -p $(BIN)
 
 $(BIN)%: $(SRC)%.cc
-	$(CXX) $(INCS) $(ROOTINCS) $(CXXFLAGS) $(ROOTCXXFLAGS) -MMD -MP $< -o $@ $(ROOTLIBS) $(ROOFITLIBS)
+$(CXX) $(INCS) $(ROOTINCS) $(CXXFLAGS) $(ROOTCXXFLAGS) -MMD -MP $< -o $@ $(ROOTLIBS) $(ROOFITLIBS)
