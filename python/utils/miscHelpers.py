@@ -145,6 +145,19 @@ def getRapPtLbl(rapBin, rapBinning, ptBin, ptBinning):
                     str(ptMin), " < p_{T} < ", str(ptMax), "$"])
 
 
+def getBinEdgeVals(fullName):
+    """
+    Get the numerical values of the bin, denoted in it's name that has the form:
+    UpVtoXpY
+    """
+    rgx = r'([0-9]+(p[0-9]+)?)to([0-9]+(p[0-9]+)?)'
+    m = re.search(rgx, fullName)
+    if m:
+        return [float(m.group(1).replace('p', '.')), float(m.group(3).replace('p', '.'))]
+
+    print("Couldn't match regex to find bin edges of binning in name: \'{}\'".format(fullName))
+    return None
+
 def sanitizeInputFileNames(inputfiles):
     """
     Sanitize the input file name list (of lists) so that every file has a legend entry (defaults to empty)
