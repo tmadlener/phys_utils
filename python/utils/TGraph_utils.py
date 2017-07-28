@@ -14,6 +14,14 @@ def createGraph(x, y, exh, exl, eyh, eyl):
     return graph
 
 
+def createGraphSym(x, y, ex, ey):
+    """
+    Create a TGraphAsymmErrors from the passed (lists) of values.
+    This is a simple convenience wrapper around createGraph.
+    """
+    return createGraph(x, y, ex, ex, ey, ey)
+
+
 def getAvgVal(graphs, i):
     """Get the average value of all y-values at index i in all the passed graphs."""
     from numpy import mean, std
