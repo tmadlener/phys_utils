@@ -189,12 +189,38 @@ def _getMinMax(plots):
             widenRange(min(minsY), max(maxsY))]
 
 
+def _getAxisRange(axPlotRange, axRange):
+    """
+    Determine the plotting range along one axis.
+    If the axRange is None or both entries are None the axPlotRange is returned.
+    If one of the entries is None, the other will be used and the None entry will
+    be replaced by the corresponding entry from axPlotRange.
+    """
+    if axRange is not None and len(axRange) < 2:
+        print('Axis range needs to have at least two values but passed is: {}'.format(axRange))
+        return axPlotRange
+
+    if axRange is None  or (axRange[0] is None and axRange[1] is None):
+        return axPlotRange
+
+    axMin, axMax = axPlotRange # unpack (for a bit less typing)
+
+    if axRange[0] is None:
+        return [axMin, axRange[1]]
+    if axRange[1] is None:
+        return [axRange[0], axMax]
+
+    return axRange
+
+
 def _setupPlotHist(canvas, xRange, yRange, plots, xlab, ylab):
     """
     Set up a drawing frame for the canvas.
     If both ranges are specified, both are used, if only one is specified
     only that one is used and the other is set to the min/max values of the plots
-    in that direction
+    in that direction.
+    Setting one of the entries in a range to None will result in the usage of the
+    min/max value of the plots in that direction.
     """
     # If a 'global' x and or y label is set, the frame is needed for displaying
     # Similarly if we don't have a histogram the plot histo is needed for displaying
@@ -202,17 +228,16 @@ def _setupPlotHist(canvas, xRange, yRange, plots, xlab, ylab):
     if xRange is None and yRange is None and not ylab and not xlab and histInPlots:
         return None
 
-    if xRange is None or yRange is None:
-        xPlotRange, yPlotRange = _getMinMax(plots)
+    xPlotRange, yPlotRange = _getMinMax(plots)
 
-    x = xPlotRange if xRange is None else xRange
-    y = yPlotRange if yRange is None else yRange
+    x = _getAxisRange(xPlotRange, xRange)
+    y = _getAxisRange(yPlotRange, yRange)
 
     if canvas.GetLogx() == 1 and x[0] <= 0:
-        print('min value for x axis is {0} but logscale is set, setting it to 0.1'.format(xPlotRange[0]))
+        print('min value for x axis is {0} but logscale is set, setting it to 0.1'.format(x[0]))
         x[0] = 0.1
     if canvas.GetLogy() == 1 and y[0] <= 0:
-        print('min value for y axis is {0} but logscale is set, setting it to 0.1'.format(xPlotRange[0]))
+        print('min value for y axis is {0} but logscale is set, setting it to 0.1'.format(y[0]))
         y[0] = 0.1
 
 
