@@ -331,6 +331,10 @@ def mkplot(plots, **kwargs):
 
     plotOnCanvas(can, plots, **dict(plotOptions)).Draw()
 
+    saveName = kwargs.pop('saveAs', None)
+    if saveName is not None and saveName:
+        can.SaveAs(saveName)
+
     if kwargs.pop('ret', False) or existingCan is not None:
         return can
     else:
