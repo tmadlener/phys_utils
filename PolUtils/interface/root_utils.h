@@ -77,27 +77,32 @@ std::vector<std::string> getBranchNames(TTree* t)
   return branchNames;
 }
 
+RooRealVar* getVar(RooWorkspace* ws, const std::string& name)
+{
+  auto* var = static_cast<RooRealVar*>(ws->var(name.c_str()));
+  if (var) return var;
+  var = static_cast<RooRealVar*>(ws->function(name.c_str()));
+  if (var) return var;
+
+  std::cerr << "Could not get " << name << " from workspace\n";
+  return nullptr;
+}
+
 /** get value of variable with name from workspace. */
 double getVarVal(RooWorkspace* ws, const std::string& name)
 {
-  auto* var = static_cast<RooRealVar*>(ws->var(name.c_str()));
-  if (var) return var->getVal();
-  var = static_cast<RooRealVar*>(ws->function(name.c_str()));
-  if (var) return var->getVal();
-
-  std::cerr << "Could not get " << name << " from workspace" << std::endl;
+  if (auto* var = getVar(ws, name)) {
+    return var->getVal();
+  }
   return 0; // returning zero to make this bugs a bit more subtle and harder to detect ;)
 }
 
 /** get value error of variable with name from workspace. */
 double getVarError(RooWorkspace* ws, const std::string& name)
 {
-  auto* var = static_cast<RooRealVar*>(ws->var(name.c_str()));
-  if (var) return var->getError();
-  var = static_cast<RooRealVar*>(ws->function(name.c_str()));
-  if (var) return var->getError();
-
-  std::cerr << "Could not get " << name << " from workspace" << std::endl;
+  if (auto* var = getVar(ws, name)) {
+    return var->getError();
+  }
   return 0; // returning zero to make this bugs a bit more subtle and harder to detect ;)
 }
 
