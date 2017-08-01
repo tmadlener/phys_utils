@@ -152,15 +152,15 @@ bool chicPGunMCTupling(const ChicInputEvent& inEvent, ChicTupleEvent& event)
   event.MuNEta = inEvent.muP().Eta();
   event.MuNPhi = inEvent.muP().Phi();
 
-  const auto anglesHX = calcAnglesInFrame(inEvent.muP(), inEvent.muN(), RefFrame::HX);
+  const auto anglesHX = calcAnglesInFrame(inEvent.muN(), inEvent.muP(), RefFrame::HX);
   event.cosTh_HX = anglesHX.costh;
   event.phi_HX = anglesHX.phi;
 
-  const auto anglesPX = calcAnglesInFrame(inEvent.muP(), inEvent.muN(), RefFrame::PX);
+  const auto anglesPX = calcAnglesInFrame(inEvent.muN(), inEvent.muP(), RefFrame::PX);
   event.cosTh_PX = anglesPX.costh;
   event.phi_PX = anglesPX.phi;
 
-  const auto anglesCS = calcAnglesInFrame(inEvent.muP(), inEvent.muN(), RefFrame::CS);
+  const auto anglesCS = calcAnglesInFrame(inEvent.muN(), inEvent.muP(), RefFrame::CS);
   event.cosTh_CS = anglesCS.costh;
   event.phi_CS = anglesCS.phi;
 
