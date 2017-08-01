@@ -20,7 +20,7 @@ public:
   /** ctor. */
   TTreeLooper(TTree* inTree, TTree* outTree);
 
-  template<typename CondF>
+  template<typename CondF, PrintStyle PS = PrintStyle::ProgressBar>
   void loop(CondF cond, const long int maxEvents = -1);
 
 private:
@@ -51,7 +51,7 @@ TTreeLooper<InEventT, OutEventT>::TTreeLooper(TTree* inTree, TTree* outTree) :
 }
 
 template<typename InEventT, typename OutEventT>
-template<typename CondF>
+template<typename CondF, PrintStyle PS>
 void TTreeLooper<InEventT, OutEventT>::loop(CondF cond, const long int maxEvents)
 {
   // check first how many events we want to process and correct for a possible input error, where more events
@@ -71,7 +71,7 @@ void TTreeLooper<InEventT, OutEventT>::loop(CondF cond, const long int maxEvents
       m_outTree->Fill();
       count++;
     }
-    printProgress<PrintStyle::ProgressBar>(i, nEvents - 1, startTime); // -1 to reach 100 %
+    printProgress<PS>(i, nEvents - 1, startTime); // -1 to reach 100 %
   }
 
   std::cout << "number of reconstructed events: " << count << " of a total of " << nEvents << " events\n";

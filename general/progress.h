@@ -46,7 +46,8 @@ using ProgressClock = std::chrono::high_resolution_clock;
 
 enum class PrintStyle {
   ProgressBar, /**< (simple) progress bar. */
-  ProgressText /**< slightly more detailed info, each printout with new line. */
+  ProgressText, /**< slightly more detailed info, each printout with new line. */
+  None /**< disable printing. */
 };
 
 template<PrintStyle S>
@@ -58,6 +59,8 @@ void printProgressImpl(const size_t& i, const size_t& N, const double compFrac,
  * Also prints the elapsed time assuming that the processing startet at the startTime and an estimate of the remaining time.
  *
  * The nPrints variable controls how many printouts there will be and the os can be used to redirect the printout to any ostream.
+ *
+ * TODO: currently the None option goes through all the calculations and checks although it should actually be a No-op.
  */
 template<PrintStyle Style = PrintStyle::ProgressBar, typename ClockType = ProgressClock>
 void printProgress(const size_t& i, const size_t& N, const typename ClockType::time_point& startTime, const size_t& nPrints = 100,
@@ -108,6 +111,13 @@ void printProgressImpl<PrintStyle::ProgressBar>(const size_t&, const size_t&,
   } else {
     std::cout << " " << elaps  << " (elapsed)  " << std::endl; // (automatic new line when completed)
   }
+}
+
+template<>
+void printProgressImpl<PrintStyle::None>(const size_t&, const size_t&, const double,
+                                         const SimpleTime&, const SimpleTime&, std::ostream&)
+{
+  return;
 }
 
 #endif
