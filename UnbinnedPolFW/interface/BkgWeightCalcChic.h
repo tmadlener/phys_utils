@@ -129,6 +129,31 @@ LifeTimeRegions calcLifetimeRegions(RooWorkspace *ws, const Region<Boundary::Two
       Region<Boundary::TwoSided>(ctres * nSigmaPR, ctMax, "NP")};
 }
 
+LifeTimeRegions calcLifeTimeRegionsJpsi(RooWorkspace* ws)
+{
+  using namespace RooFit;
+
+  auto *ct = getVar(ws, "Jpsict");
+  auto *ctErr = getVar(ws, "JpsictErr");
+
+  auto promptPdf = static_cast<RooAbsPdf*>(ws->pdf("jpsi_TotalPromptLifetime"));
+
+  const std::string binname = "data_rap1_pt2_SR"; // hardcoded
+  auto *data = static_cast<RooDataSet*>(ws->data(binname.c_str()));
+
+  auto *dataCtErr = static_cast<RooDataSet*>(data->reduce(SelectVars(RooArgSet(*ctErr)),
+                                                          Name("dataJpsictErr")));
+
+  RooDataSet *promptPseudoData = promptPdf->generate(*ct, ProtoData(*dataCtErr));
+
+  constexpr int nBinsSigDef = 200; // bins to use for the histogram to define the regions
+  TH1D *hist = static_cast<TH1D*>(promptPseudoData->createHistogram("hist", *ct, Binning(nBinsSigDef)));
+
+  const double ctres = hist->GetRMS();
+  return LifeTimeRegions{Region<Boundary::TwoSided>(-ctres * nSigmaPR, ctres * nSigmaPR, "PR"),
+      Region<Boundary::TwoSided>(ctres * nSigmaPR, ctMax, "NP")};
+}
+
 struct BkgWeights {
   double wMBkg1;
   double wMBkg2;
