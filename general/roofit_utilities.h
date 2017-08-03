@@ -6,6 +6,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "string_helper.h"
+#include "root_utils.h"
 
 #include "RooRealVar.h"
 #include "RooFormulaVar.h"
@@ -67,11 +68,17 @@ struct FitFormula : FitGeneric {
 };
 
 template<>
+void FitFormula<1>::importToWorkspace(RooWorkspace *ws) const
+{
+  RooFormulaVar tmp(name.c_str(), expr.c_str(), RooArgList(*getVar(ws, args[0])));
+  ws->import(tmp);
+}
+
+template<>
 void FitFormula<2>::importToWorkspace(RooWorkspace* ws) const
 {
   RooFormulaVar tmp(name.c_str(), expr.c_str(),
-                     RooArgList(*ws->var(args[0].c_str()), *ws->var(args[1].c_str()))
-                     );
+                    RooArgList(*getVar(ws, args[0]), *getVar(ws, args[1])));
   ws->import(tmp);
 }
 
@@ -79,7 +86,7 @@ template<>
 void FitFormula<3>::importToWorkspace(RooWorkspace* ws) const
 {
   RooFormulaVar tmp(name.c_str(), expr.c_str(),
-                    RooArgList(*ws->var(args[0].c_str()), *ws->var(args[1].c_str()), *ws->var(args[2].c_str()))
+                    RooArgList(*getVar(ws, args[0]), *getVar(ws, args[1]), *getVar(ws, args[2]))
                     );
   ws->import(tmp);
 }
@@ -88,11 +95,47 @@ template<>
 void FitFormula<4>::importToWorkspace(RooWorkspace* ws) const
 {
   RooFormulaVar tmp(name.c_str(), expr.c_str(),
-                    RooArgList(*ws->var(args[0].c_str()), *ws->var(args[1].c_str()), *ws->var(args[2].c_str()),
-                               *ws->var(args[3].c_str()))
+                    RooArgList(*getVar(ws, args[0]), *getVar(ws, args[1]), *getVar(ws, args[2]),
+                               *getVar(ws, args[3]))
                     );
   ws->import(tmp);
 }
+
+
+/**
+ * Implementation of the FitFormula interface for usage with strings and double values.
+ * The expression is passed to the Form constructor with the numerical values as arguments.
+ */
+template<size_t N, size_t M>
+struct FitFormulaV : FitGeneric {
+  FitFormulaV(const std::string& fname, const std::string fexp,
+              const std::array<double, N> valargs, const std::array<std::string, M> sargs) :
+    name(fname), expr(fexp), vargs(valargs), args(sargs) {}
+
+  /** import the FormulaVarV to the passed workspace. NOTE: only currently required overloads exist. */
+  virtual void importToWorkspace(RooWorkspace *ws) const override;
+
+  const std::string name;
+  const std::string expr;
+  const std::array<double, N> vargs;
+  const std::array<std::string, M> args;
+};
+
+template<>
+void FitFormulaV<1,1>::importToWorkspace(RooWorkspace* ws) const
+{
+  RooFormulaVar tmp(name.c_str(), Form(expr.c_str(), vargs[0], vargs[1]),
+                    RooArgList(*getVar(ws, args[0])));
+  ws->import(tmp);
+}
+
+template<>
+void FitFormulaV<2,1>::importToWorkspace(RooWorkspace *ws) const
+{
+  RooFormulaVar tmp(name.c_str(), Form(expr.c_str(), vargs[0]), RooArgList(*getVar(ws, args[0])));
+  ws->import(tmp);
+}
+
 
 /**
  * Implementation of the FitFormula interface for the RooProduct / RooAddition (class of RooFit, of which I am not sure if
@@ -117,7 +160,7 @@ struct RooClass : FitGeneric {
 template<typename T>
 void RooClass<T>::importToWorkspace(RooWorkspace* ws) const
 {
-  T tmp(name.c_str(), name.c_str(), RooArgList(*ws->var(arg1.c_str()), *ws->var(arg2.c_str())));
+  T tmp(name.c_str(), name.c_str(), RooArgList(*getVar(ws, arg1), *getVar(ws, arg2)));
   ws->import(tmp);
 }
 
@@ -142,7 +185,7 @@ template<>
 void GenericPdf<3>::importToWorkspace(RooWorkspace* ws) const
 {
   RooGenericPdf tmp(name.c_str(), name.c_str(), expr.c_str(),
-                    RooArgList(*ws->var(args[0].c_str()), *ws->var(args[1].c_str()), *ws->var(args[2].c_str()))
+                    RooArgList(*getVar(ws, args[0]), *getVar(ws, args[1]), *getVar(ws, args[2]))
                     );
   ws->import(tmp);
 }

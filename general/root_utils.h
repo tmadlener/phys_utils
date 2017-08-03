@@ -187,8 +187,8 @@ double getVarError(RooWorkspace* ws, const std::string& name)
 /** set workspace variable constant to the passed value. */
 inline void setVarConstant(RooWorkspace* ws, const std::string& name, const double val)
 {
-  ws->var(name.c_str())->setVal(val);
-  ws->var(name.c_str())->setConstant(true);
+  getVar(ws, name)->setVal(val);
+  getVar(ws, name)->setConstant(true);
 }
 
 TChain* createTChain(const std::vector<std::string>& fileNames, const std::string& treename)
