@@ -2,7 +2,7 @@
 #define PHYSUTILS_POLUTILS_JPSIFROMBEVENT_H__
 
 #include "JpsiFromBInputEvent.h"
-#include "root_utils.h"
+#include "general/root_utils.h"
 
 #include "TTree.h"
 #include "TLorentzVector.h"

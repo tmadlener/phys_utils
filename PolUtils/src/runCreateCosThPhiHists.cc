@@ -1,7 +1,7 @@
 #include "general/ArgParser.h"
 #include "general/progress.h"
 
-#include "root_utils.h"
+#include "general/root_utils.h"
 #include "misc_utils.h"
 
 #include "TFile.h"

@@ -1,7 +1,7 @@
 #ifndef PHYSUTILS_POLUTILS_TTREELOOPER_H__
 #define PHYSUTILS_POLUTILS_TTREELOOPER_H__
 
-#include "root_utils.h"
+#include "general/root_utils.h"
 
 #include "general/progress.h"
 
