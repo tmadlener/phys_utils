@@ -4,7 +4,7 @@
 #include "ChicTupleEvent.h"
 #include "ChicTuplingWithWeights.h"
 
-#include "../PolUtils/interface/root_utils.h"
+#include "general/root_utils.h"
 #include "../PolUtils/interface/calcAngles.h"
 #include "../PolUtils/interface/TTreeLooper.h"
 
