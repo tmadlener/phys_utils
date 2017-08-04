@@ -5,24 +5,11 @@
 #include "general/root_utils.h"
 #include "general/roofit_utilities.h"
 #include "general/ArgParser.h"
+#include "general/misc_utils.h"
 
 #include <string>
 #include <iostream>
 #include <regex>
-
-std::string getBinFromFile(const std::string& filename)
-{
-  // declaring a separate (char *) string here to be able to print it later in case
-  constexpr auto rgxstr = ".*_rap([0-9]+)_pt([0-9]+).*";
-  std::regex rgx(rgxstr);
-  std::smatch cm;
-  if (std::regex_match(filename, cm, rgx)) {
-    return "rap" + cm[1].str() + "_pt" + cm[2].str();
-  }
-
-  std::cerr << "Could't match " << rgxstr << " to " << filename << "\n";
-  return "";
-}
 
 #if !(defined(__CINT__) or defined(__CLING__))
 int main(int argc, char *argv[])
