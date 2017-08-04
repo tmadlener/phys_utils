@@ -129,17 +129,17 @@ LifeTimeRegions calcLifetimeRegions(RooWorkspace *ws, const Region<Boundary::Two
       Region<Boundary::TwoSided>(ctres * nSigmaPR, ctMax, "NP")};
 }
 
-LifeTimeRegions calcLifeTimeRegionsJpsi(RooWorkspace* ws)
+LifeTimeRegions calcLifeTimeRegionsJpsi(RooWorkspace* ws, const std::string& binname)
 {
   using namespace RooFit;
 
   auto *ct = getVar(ws, "Jpsict");
   auto *ctErr = getVar(ws, "JpsictErr");
 
-  auto promptPdf = static_cast<RooAbsPdf*>(ws->pdf("jpsi_TotalPromptLifetime"));
+  auto *promptPdf = static_cast<RooAbsPdf*>(ws->pdf("jpsi_TotalPromptLifetime"));
 
-  const std::string binname = "data_rap1_pt2_SR"; // hardcoded
-  auto *data = static_cast<RooDataSet*>(ws->data(binname.c_str()));
+  // auto *data = static_cast<RooDataSet*>(ws->data(binname.c_str()));
+  auto *data = ws->data(binname.c_str());
 
   auto *dataCtErr = static_cast<RooDataSet*>(data->reduce(SelectVars(RooArgSet(*ctErr)),
                                                           Name("dataJpsictErr")));
