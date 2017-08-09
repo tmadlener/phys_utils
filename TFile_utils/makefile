@@ -10,7 +10,7 @@ CXXFLAGS=-Wall
 all: printRootFile saveCanvas
 
 printRootFile: printRootFile.C
-	$(CXX) $^ $(INC_DIRS) $(ROOT_CONFIG) $(CXXFLAGS) -o $@
+	$(CXX) $^ $(INC_DIRS) $(ROOT_CONFIG) $(CXXFLAGS) -o $@ -lRooFitCore
 
 saveCanvas: saveCanvas.C
 	$(CXX) $^ $(INC_DIRS) $(ROOT_CONFIG) $(CXXFLAGS) -o $@

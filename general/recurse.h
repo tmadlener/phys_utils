@@ -10,6 +10,7 @@
 #include "TClass.h"
 
 #include <functional>
+#include <string>
 
 /**
  * No-op function taking a TDirectory* that is used as default argument for the dirFunc in
@@ -37,10 +38,11 @@ void recurseOnFile(const T* file, F& func, DF dirFunc = noopVoidFunction)
 {
   TIter nextKey(file->GetListOfKeys());
   TKey* key = nullptr;
+  const std::string currPath = file->GetPath();
   while ((key = static_cast<TKey*>(nextKey()))) {
     TObject* obj = key->ReadObj();
     if (!inheritsFrom<TDirectory>(obj)) {
-      func(obj);
+      func(obj, currPath);
     } else {
       // TDirectory is the base-class that implements the GetListOfKeys function
       // static_cast should be fine here, since we already checked above if we inherit from TDirectory
