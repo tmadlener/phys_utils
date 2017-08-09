@@ -122,7 +122,7 @@ struct FitFormulaV : FitGeneric {
 };
 
 template<>
-void FitFormulaV<1,1>::importToWorkspace(RooWorkspace* ws) const
+void FitFormulaV<2,1>::importToWorkspace(RooWorkspace* ws) const
 {
   RooFormulaVar tmp(name.c_str(), Form(expr.c_str(), vargs[0], vargs[1]),
                     RooArgList(*getVar(ws, args[0])));
@@ -130,7 +130,7 @@ void FitFormulaV<1,1>::importToWorkspace(RooWorkspace* ws) const
 }
 
 template<>
-void FitFormulaV<2,1>::importToWorkspace(RooWorkspace *ws) const
+void FitFormulaV<1,1>::importToWorkspace(RooWorkspace *ws) const
 {
   RooFormulaVar tmp(name.c_str(), Form(expr.c_str(), vargs[0]), RooArgList(*getVar(ws, args[0])));
   ws->import(tmp);
