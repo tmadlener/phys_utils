@@ -43,10 +43,14 @@ struct MassRegions {
   Region<Boundary::TwoSided> SR2;
 };
 
-MassRegions calcMassRegions(RooWorkspace *ws)
+MassRegions calcMassRegions(RooWorkspace *ws, const std::string& snapName = "",
+                            const std::string& namePrefix = "")
 {
   // using namespace RooFit;
   auto *mass = getVar(ws, "chicMass");
+  if (!snapName.empty()) {
+    ws->loadSnapshot(snapName.c_str());
+  }
 
   // get the cdf from the pdf (stored in the workspace) as TF1 to be able to easily evaluate it
   // at arbitray x-values (haven't found a way to do this in RooFit directly)
@@ -63,16 +67,21 @@ MassRegions calcMassRegions(RooWorkspace *ws)
   const double lsbHigh = cdf1->GetX(mChicBkgLo);
   const double rsbLow  = cdf2->GetX(mChicBkgHi);
 
-  return MassRegions{Region<Boundary::TwoSided>(mLSBLo, lsbHigh, "LSB"),
-      Region<Boundary::TwoSided>(rsbLow, mRSBHi, "RSB"),
-      Region<Boundary::TwoSided>(lowChic1, highChic1, "SR1"),
-      Region<Boundary::TwoSided>(lowChic2, highChic2, "SR2")};
+  return MassRegions{Region<Boundary::TwoSided>(mLSBLo, lsbHigh, namePrefix + "LSB"),
+      Region<Boundary::TwoSided>(rsbLow, mRSBHi, namePrefix + "RSB"),
+      Region<Boundary::TwoSided>(lowChic1, highChic1, namePrefix + "SR1"),
+      Region<Boundary::TwoSided>(lowChic2, highChic2, namePrefix + "SR2")};
 }
 
 double getIntegralInRegion(RooWorkspace *ws, const Region<Boundary::TwoSided>& region,
-                           const std::string& pdfname, const std::string& varname)
+                           const std::string& pdfname, const std::string& varname,
+                           const std::string& snapName = "")
 {
   using namespace RooFit;
+  if (!snapName.empty()) {
+    ws->loadSnapshot(snapName.c_str());
+  }
+
   auto *var = getVar(ws, varname);
   var->setRange(region.name().c_str(), region.min(), region.max());
 
@@ -81,6 +90,20 @@ double getIntegralInRegion(RooWorkspace *ws, const Region<Boundary::TwoSided>& r
                                         Range(region.name().c_str()))->getVal();
 
   return rangeInt;
+}
+
+std::pair<double, double> calcMassWeights(RooWorkspace* ws, const MassRegions& mr, const std::string& pdfname,
+                                          const std::string& varname, const std::string& snapname)
+{
+  const auto intLSB = getIntegralInRegion(ws, mr.LSB, pdfname, varname, snapname);
+  const auto intRSB = getIntegralInRegion(ws, mr.RSB, pdfname, varname, snapname);
+  const auto intSR1 = getIntegralInRegion(ws, mr.SR1, pdfname, varname, snapname);
+  const auto intSR2 = getIntegralInRegion(ws, mr.SR2, pdfname, varname, snapname);
+
+  const double wSR1 = - intSR1 / (intLSB + intRSB);
+  const double wSR2 = - intSR2 / (intLSB + intRSB);
+
+  return {wSR1, wSR2};
 }
 
 double getIntegralInRegion(RooWorkspace *ws, const std::vector<Region<Boundary::TwoSided>> &regions,

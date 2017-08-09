@@ -36,12 +36,14 @@ template<typename O>
 void print(O* obj)
 {
   std::cout << currentDir +  obj->GetName() << " (<" << obj->ClassName() << ">)\n";
+
 }
 
 /** templatized print function that does the actual work. Spezialization needed for TTree to also print TBranches. */
 template<>
 void print(TTree* tree)
 {
+
   // NOTE: If the tree is on the root-directory currently two slashes are printed instead of only one
   std::cout << currentDir + tree->GetName() << ":\n";
   for (const auto& name : getBranchNames(tree)) {

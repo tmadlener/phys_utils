@@ -31,6 +31,11 @@ int main(int argc, char *argv[])
   auto *dataPR = static_cast<RooDataSet*>(dataSR->reduce(jpsiLTRegions.PR.getCutStr("Jpsict").c_str()));
   auto *dataNP = static_cast<RooDataSet*>(dataSR->reduce(jpsiLTRegions.NP.getCutStr("Jpsict").c_str()));
 
+  dataPR->SetName(("data_" + binname + "_SR_PR").c_str());
+  ws->import(*dataPR);
+  dataNP->SetName(("data_" + binname + "_SR_NP").c_str());
+  ws->import(*dataNP);
+
   // 2) build mass moe
   const auto massModel = createModel();
   massModel.fitModel.importToWorkspace(ws);

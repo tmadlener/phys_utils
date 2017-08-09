@@ -78,4 +78,46 @@ bool chicTuplingWithWeights(const ChicInputEvent &inEvent, ChicTupleEvent &event
   return true;
 }
 
+
+bool chicTuplingWithMassWeights(const ChicInputEvent &inEvent, ChicTupleEvent &event,
+                                const MassRegions& mr, const Region<Boundary::TwoSided> &ltr,
+                                const std::pair<double, double> weights)
+{
+  event.chicMass = inEvent.chic().M();
+  event.Jpsict = inEvent.Jpsict;
+
+
+  // NOTE: tmadlener, 04.08.17: hardcoded 1 pt bin into here to have some results
+  if (inEvent.chic().Pt() < 15 || inEvent.chic().Pt() > 20) return false;
+
+  // check if event falls into analysis range
+  if (!containedInMass(event.chicMass, mr) || !ltr.contains(event.Jpsict)) return false;
+
+  event.chicPt = inEvent.chic().Pt();
+  event.chicRap = inEvent.chic().Rapidity();
+
+  const auto anglesHX = calcAnglesInFrame(inEvent.muN(), inEvent.muP(), RefFrame::HX);
+  event.costh_HX = anglesHX.costh;
+  event.phi_HX = anglesHX.phi;
+
+  const auto anglesPX = calcAnglesInFrame(inEvent.muN(), inEvent.muP(), RefFrame::PX);
+  event.costh_PX = anglesPX.costh;
+  event.phi_PX = anglesPX.phi;
+
+  const auto anglesCS = calcAnglesInFrame(inEvent.muN(), inEvent.muP(), RefFrame::CS);
+  event.costh_CS = anglesCS.costh;
+  event.phi_CS = anglesCS.phi;
+
+  double wChic1 = mr.SR1.contains(event.chicMass) ? 1 : weights.first;
+  if (mr.SR2.contains(event.chicMass)) wChic1 = 0;
+
+  double wChic2 = mr.SR2.contains(event.chicMass) ? 1 : weights.second;
+  if (mr.SR1.contains(event.chicMass)) wChic2 = 0;
+
+  event.wChic1 = wChic1;
+  event.wChic2 = wChic2;
+
+  return true;
+}
+
 #endif

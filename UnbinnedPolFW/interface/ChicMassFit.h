@@ -9,6 +9,11 @@
 #include "RooAddition.h"
 #include "RooMinuit.h"
 #include "RooFitResult.h"
+#include "RooPlot.h"
+#include "RooDataSet.h"
+#include "RooAddPdf.h"
+
+#include "TCanvas.h"
 
 #include <vector>
 #include <string>
@@ -36,16 +41,16 @@ struct ChicMassModel {
 ChicMassModel createModel()
 {
   const std::vector<std::pair<std::string, double> > constVals = {
-    {"BK_p2", 0.1},
+    {"BK_p2", 1.0e-10},
     {"CBn", 2.75},
     {"fracSignal_chic0", 0.03}
   };
 
   const std::vector<std::string> fitExpressions = {
     "RooCBShape::M_chic1(chicMass, CBmass1, CBsigma1, CBalpha1, CBn)",
-    "RooCBShape::M_chic2(chicMass, CBmass2, CBsigma2, CBalpha2, CBn)",
+    "RooCBShape::M_chic2(chicMass, CBmass2, CBsigma2, CBalpha2, CBn2)",
     "RooVoigtian::M_chic0(chicMass, CBmass0, CBsigma0, CBwidth0[0.0104])",
-    "RooPolynomial::M_background(chicMass, BK_p1, BK_p2)",
+    "RooPolynomial::M_background(chicMass, {BK_p1, BK_p2})",
     "SUM::M_signal(fracSignal_chic1 * M_chic1, fracSignal_chic0 * M_chic0, M_chic2)",
   };
 
@@ -69,9 +74,9 @@ ChicMassModel createModel()
   const std::vector<FitGeneric*> fitFormulas = {
     new FitFormula<2>("CBalpha0", "(@0+@1)/2.", {"CBalpha1", "CBalpha2"}),
     new FitFormula<1>("CBn2", "@0", {"CBn"}),
-    new FitFormulaV<2,1>("PES", "(@0-%f/%f)", {MpsiPDG, Mchi1PDG-MpsiPDG}, {"CBmass1"}),
-    new FitFormulaV<1,1>("CBsigma0", "@0+%f", {(Mchi0PDG - MpsiPDG)/(Mchi1PDG - MpsiPDG)}, {"CBsigma1"}),
-    new FitFormulaV<1,1>("CBsigma2", "@0+%f", {(Mchi2PDG - MpsiPDG)/(Mchi1PDG - MpsiPDG)}, {"CBsigma1"}),
+    new FitFormulaV<2,1>("PES", "(@0-%f)/%f", {MpsiPDG, Mchi1PDG-MpsiPDG}, {"CBmass1"}),
+    new FitFormulaV<1,1>("CBsigma0", "@0*%f", {(Mchi0PDG - MpsiPDG)/(Mchi1PDG - MpsiPDG)}, {"CBsigma1"}),
+    new FitFormulaV<1,1>("CBsigma2", "@0*%f", {(Mchi2PDG - MpsiPDG)/(Mchi1PDG - MpsiPDG)}, {"CBsigma1"}),
     new FitFormulaV<2,1>("CBmass0", "@0*%f+%f", {Mchi0PDG - MpsiPDG, MpsiPDG}, {"PES"}),
     new FitFormulaV<2,1>("CBmass2", "@0*%f+%f", {Mchi2PDG - MpsiPDG, MpsiPDG}, {"PES"})
   };
@@ -122,6 +127,33 @@ void doFit(RooWorkspace *ws, RooDataSet *data, const std::string& modelName,
 
   FitVariable("var_covQualMigrad", covQualMigrad).importToWorkspace(ws);
   FitVariable("var_covQualHesse", covQualHesse).importToWorkspace(ws);
+}
+
+void makePlot(RooWorkspace *ws,  const std::string& modelName, const std::string& snapName,
+              const std::string& dataName)
+{
+  using namespace RooFit;
+  auto *fullModel = dynamic_cast<RooAddPdf*>(ws->pdf(modelName.c_str()));
+  auto *chicMass = getVar(ws, "chicMass");
+  auto *data = ws->data(dataName.c_str());
+
+  ws->loadSnapshot(snapName.c_str());
+
+  auto *frame = chicMass->frame();
+  data->plotOn(frame);
+  fullModel->plotOn(frame);
+
+  auto pdfs = fullModel->pdfList();
+  for (auto i = 0; i < pdfs.getSize(); ++i) {
+    fullModel->plotOn(frame, Components(*pdfs.at(i)), LineColor(kGreen), LineStyle(kDashed));
+  }
+  
+  TCanvas *c = new TCanvas("c", "c", 1000, 1000);
+  c->cd();
+  frame->Draw();
+
+  c->Draw();
+  c->SaveAs((dataName + ".pdf").c_str());
 }
 
 #endif
