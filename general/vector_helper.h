@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <ostream>
+#include <numeric>
 
 /** stream operator for stl containers. */
 template<class T>
