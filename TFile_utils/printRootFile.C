@@ -106,6 +106,8 @@ int main(int argc, char* argv[])
   }
 
   printRootFile(std::string(argv[1]));
+
+  std::cout << printedTObjects << "\n";
   return 0;
 }
 #endif
