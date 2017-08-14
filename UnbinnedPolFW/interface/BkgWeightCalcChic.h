@@ -124,7 +124,8 @@ struct LifeTimeRegions {
   Region<Boundary::TwoSided> NP;
 };
 
-LifeTimeRegions calcLifetimeRegions(RooWorkspace *ws, const Region<Boundary::TwoSided> &massSR)
+LifeTimeRegions calcLifetimeRegions(RooWorkspace *ws, const Region<Boundary::TwoSided> &massSR,
+                                    const std::string &dataname)
 {
   using namespace RooFit;
 
@@ -136,8 +137,7 @@ LifeTimeRegions calcLifetimeRegions(RooWorkspace *ws, const Region<Boundary::Two
   // NOTE: this is currently hardcoded for running the first tests
   // TODO: either detect this automatically via some iterator on th workspace
   //       or pass rap/pt bin into this function
-  const std::string binname = "data_rap1_pt2_SR";
-  auto *data = static_cast<RooDataSet*>(ws->data(binname.c_str()));
+  auto *data = static_cast<RooDataSet*>(ws->data(dataname.c_str()));
 
   auto *dataSR = data->reduce(massSR.getCutStr("chicMass").c_str());
   auto *dataJpsictErr = static_cast<RooDataSet*>(dataSR->reduce(SelectVars(RooArgSet(*ctErr)), Name("dataJpsictErr")));
@@ -200,6 +200,67 @@ BkgWeights calculateRegionWeights(RooWorkspace *ws, const MassRegions &mr,
   std::cout << intNP << " " << intPR << " -> " << fNP << " " << 1 - fNP << "\n";
 
   return BkgWeights{std::abs(1 - fMBkg1), std::abs(1 - fMBkg2), std::abs(1 - fNP)};
+}
+
+struct BkgWeights2D {
+  double wChic1;
+  double wChic2;
+};
+
+/**
+ * Integrate pdf in 2D using the passed mass and lifetime region as boundaries.
+ */
+double get2DIntegralInRegions(RooWorkspace *ws, const Region<Boundary::TwoSided> &mR,
+                              const Region<Boundary::TwoSided> &lR, const std::string &pdfname,
+                              const std::string &mName, const std::string &lName,
+                              const std::string &snapName = "")
+{
+  using namespace RooFit;
+  if (!snapName.empty()) {
+    ws->loadSnapshot(snapName.c_str());
+  }
+
+  const std::string rangeName = mR.name() + "_" + lR.name();
+
+  auto *mVar = getVar(ws, mName);
+  mVar->setRange(rangeName.c_str(), mR.min(), mR.max());
+  auto *lVar = getVar(ws, lName);
+  lVar->setRange(rangeName.c_str(), lR.min(), lR.max());
+  RooArgSet mlSet(*mVar, *lVar);
+
+  auto *pdf = ws->pdf(pdfname.c_str());
+
+  return pdf->createIntegral(mlSet, NormSet(mlSet), Range(rangeName.c_str()))->getVal();
+}
+
+
+/**
+ * calculate bkg weight 1 - N_all / (N_bkg) by integrating the 2D mass-lifetime
+ * distribution in appropriate ranges.
+ */
+BkgWeights2D calculate2DWeights(RooWorkspace *ws, const MassRegions &mr,
+                                const LifeTimeRegions &ltr, const std::string &snapname)
+{
+  // WARNING: Assuming that the regions cover everything without gaps between the sidebands
+  // and the SRs!
+  // COULDDO: At least put a check in place
+  Region<Boundary::TwoSided> fullMass(mr.LSB.min(), mr.RSB.max(), "fullM");
+  Region<Boundary::TwoSided> fullLT(ltr.PR.min(), ltr.NP.max(), "fullL");
+
+  const double intFull = get2DIntegralInRegions(ws, fullMass, fullLT, "ML_background",
+                                                mVarName, ltVarName, snapname);
+
+  const double intPRSR1 = get2DIntegralInRegions(ws, mr.SR1, ltr.PR, "ML_background",
+                                                 mVarName, ltVarName, snapname);
+  const double intPRSR2 = get2DIntegralInRegions(ws, mr.SR2, ltr.PR, "ML_background",
+                                                 mVarName, ltVarName, snapname);
+
+  // N_bkg = N_all - N_SR
+  // 1 - N_all / (N_bkg) = - N_SR / N_bkg
+  const double wChic1 = - intPRSR1 / (intFull - intPRSR1);
+  const double wChic2 = - intPRSR2 / (intFull - intPRSR2);
+
+  return BkgWeights2D{wChic1, wChic2};
 }
 
 #endif
