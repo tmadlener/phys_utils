@@ -5,6 +5,7 @@
 #include "ChicTuplingWithWeights.h"
 
 #include "general/root_utils.h"
+#include "general/misc_utils.h"
 #include "../PolUtils/interface/calcAngles.h"
 #include "../PolUtils/interface/TTreeLooper.h"
 
@@ -29,9 +30,13 @@ int main(int argc, char *argv[])
   auto* ws = checkGetFromFile<RooWorkspace>(fitFile, "ws_masslifetime");
   // ws->Print("v");
 
-  const auto massRegions = calcMassRegions(ws);
+  const auto binname = getBinFromFile(fitFileName);
+  const auto snapname = "snapshot_" + binname;
+  const auto massRegions = calcMassRegions(ws, snapname);
   const auto fullChicMSR = Region<Boundary::TwoSided>(massRegions.SR1.min(), massRegions.SR2.max());
-  const auto lifetimeRegions = calcLifetimeRegions(ws, fullChicMSR);
+
+  const auto dataname = "data_" + binname + "_SR";
+  const auto lifetimeRegions = calcLifetimeRegions(ws, fullChicMSR, dataname);
   const auto weights = calculateRegionWeights(ws, massRegions, lifetimeRegions);
 
   fitFile->Close();
