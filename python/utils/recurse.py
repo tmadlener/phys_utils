@@ -36,7 +36,6 @@ class ObjectCollector:
         self.regex = re.compile(rgx)
         self.clname = className
 
-
     def __call__(self, obj):
         """
         Interface required by the recursion implementation.
@@ -48,6 +47,32 @@ class ObjectCollector:
         """
         if (obj.InheritsFrom(self.clname)) and self.regex.search(obj.GetName()):
             self.objects[obj.GetName()] = obj
+
+
+class DeepObjectCollector(ObjectCollector):
+    """
+    Collector that correctly stores information to be able to traverse subdirectories
+    (TDirectory) in TFiles.
+    """
+    def __init__(self, rgx, className):
+        ObjectCollector.__init__(self, rgx, className)
+        self.currDir = ''
+
+    def __call__(self, obj):
+        """
+        Interface required from recursion implementation
+        """
+        if obj.InheritsFrom(self.clname) and self.regex.search(obj.GetName()):
+            self.objects['/'.join([self.currDir, obj.GetName()])] = obj
+
+    def setDir(self, d):
+        """
+        Set the current directory (inside TFile).
+        Intended to be used in a lambda expression as second argument to recurseOnFile
+        """
+        # TDirectory::GetPath() returns /path/to/file/ondisk.root:/TDirectories/in/file
+        # We only need the inside file part
+        self.currDir = d.GetPath().split(':')[1]
 
 
 class TH2DCollector(ObjectCollector):
@@ -74,12 +99,24 @@ class HistCollector(ObjectCollector):
         ObjectCollector.__init__(self, rgx, 'TH1')
 
 
-def collectHistograms(f, basename, coll=HistCollector):
+def deepCollectHistograms(f, basename=''):
+    """
+    Collect all histograms from the file, correctly treating plots from directories in the file.
+    """
+    coll = DeepObjectCollector(basename, 'TH1')
+    recurseOnFile(f, coll, lambda o: coll.setDir(o))
+    return coll.objects
+
+
+def collectHistograms(f, basename='', coll=HistCollector):
     """
     Collect all objects specified by coll  from TFile f, whose name matches basename and
-    return them in a dict with the names as the keys and the objects as value
+    return them in a dict with the names as the keys and the objects as value.
+    NOTE: This will traverse all subdirectories in the TFile, if the same histogram is
+    found more than once it will only be returned once (specifically the one found last).
     """
     hColl = coll(basename)
+
     recurseOnFile(f, hColl)
     return hColl.objects
 
