@@ -61,9 +61,12 @@ class DeepObjectCollector(ObjectCollector):
     def __call__(self, obj):
         """
         Interface required from recursion implementation
+        Matches the regex against the full name (including the internal path name)
         """
-        if obj.InheritsFrom(self.clname) and self.regex.search(obj.GetName()):
-            self.objects['/'.join([self.currDir, obj.GetName()])] = obj
+        if obj.InheritsFrom(self.clname):
+            fullName = '/'.join([self.currDir, obj.GetName()])
+            if self.regex.search(fullName):
+                self.objects[fullName] = obj
 
     def setDir(self, d):
         """
