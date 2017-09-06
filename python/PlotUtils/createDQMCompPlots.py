@@ -75,9 +75,17 @@ hists = deepCollectHistograms(fDir, args.rgx)
 # yes, plot all of the plots onto one canvas
 for n in hists:
     # collect the current histogram again (together with all the others)
-    # not checking if all the plots are actually present currently, simply assuming
-    # they are!
-    allhists = [f.Get(n) for f in files]
+
+    # check if the plots are present and only if they are put them into the plotting list
+    # create a new plotkeys list for every plot (to have the keys actually correspond to
+    # the files)
+    allhists = []
+    plotkeys = []
+    for (i, f) in enumerate(files):
+        plot = f.Get(n)
+        if plot:
+            allhists.append(plot)
+            plotkeys.append(keys[i])
 
     # create plot file name
     n = n.replace(fDirPath, '') # common part can be removed
@@ -88,4 +96,4 @@ for n in hists:
     condMkDirFile(plname)
 
     # colz has no effect on 1D hists for drawOpt
-    mkplot(allhists, saveAs=plname, drawOpt='colz', legEntries=keys)
+    mkplot(allhists, saveAs=plname, drawOpt='colz', legEntries=plotkeys)
