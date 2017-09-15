@@ -2,9 +2,7 @@
 #define PHYSUTILS_UNBINNEDPOLFW_NORMCALCULATION_H__
 
 #include "AngularParameters.h"
-
-// ROOT
-#include "TTree.h"
+#include "Data.h"
 
 // stl
 #include <array>
@@ -283,18 +281,9 @@ SqSumMatrix<3> calcSquareSummands(const std::array<double, 3>& supports,
 }
 
 template<size_t N, size_t M, size_t P>
-PartialExpValues<N,M,P> calcPartialExpVals(const AngularParametrization<N,M,P>& paramA, TTree* t,
-                                           const std::string& varName, const BranchNames& bNames)
+PartialExpValues<N,M,P> calcPartialExpVals(const AngularParametrization<N,M,P>& paramA,
+                                           const PolData& data)
 {
-  double var{};
-  double weight{};
-  double cosTh{};
-  double phi{};
-
-  t->SetBranchAddress(varName.c_str(), &var);
-  t->SetBranchAddress(bNames.weight.c_str(), &weight);
-  t->SetBranchAddress(bNames.cosTh.c_str(), &cosTh);
-  t->SetBranchAddress(bNames.phi.c_str(), &phi);
 
   std::array<double, N> sumsAL{};
   std::array<double, N> sumsALcT2{};
@@ -308,10 +297,10 @@ PartialExpValues<N,M,P> calcPartialExpVals(const AngularParametrization<N,M,P>& 
   SqSumMatrix<M> sqSumsAphiST2c2P{};
   SqSumMatrix<P> sqSumsAtpS2TcP{};
 
-  const int nEntries = t->GetEntries();
-  for (int i = 0; i < nEntries; ++i) {
-    t->GetEntry(i);
-    const auto angVars = calcAngularVars(cosTh, phi);
+  for (size_t i = 0; i < data.size(); ++i) {
+    const AngularVariables angVars{data.cth2[i], data.sth2c2ph[i], data.s2thcph[i]};
+    const double weight = data.w[i];
+    const double var = data.x[i];
 
     addWeighted(sumsAL, calcSummands(paramA.getSupAL(), var, 1), weight);
     addWeighted(sumsALcT2, calcSummands(paramA.getSupAL(), var, angVars.cosTh2), weight);

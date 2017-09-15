@@ -23,26 +23,19 @@ int main(int argc, char* argv[])
   const auto outFileName = parser.getOptionVal<std::string>("--outfile");
 
   TFile* refF = TFile::Open(refFileName.c_str());
-  TTree* refT = static_cast<TTree*>(refF->Get("genData"));
 
   AngularParametrization<1, 0, 0> angParams{{}, {}, {}};
-  BranchNames branchNames{"wS", "costh_HX", "phi_HX"};
+  DataBranchNames branches{"pT", "pT", "costh_HX", "phi_HX", "wS"};
+  const auto refData = readFromFile(refF, "genData", branches,
+                                    Range<RangeType::Empty>{}, Range<RangeType::Empty>{});
 
-  const auto partialExpValues = calcPartialExpVals(angParams, refT, "pT", branchNames);
+  const auto partialExpValues = calcPartialExpVals(angParams, refData);
 
-  delete refT;
   refF->Close();
 
+  // read data
   TFile* f = TFile::Open(dataFileName.c_str());
-  TTree* t = static_cast<TTree*>(f->Get("genData"));
-
-  const auto fileVals = readFromTTree(t, "pT", "costh_HX", "phi_HX", "wS");
-  const auto& pTVals = fileVals[0];
-  const auto& costhVals = fileVals[1];
-  const auto& phiVals = fileVals[2];
-  const auto& wVals = fileVals[3];
-
-  delete t;
+  const auto data = readFromFile(f, "genData", branches, EmptyRange{}, EmptyRange{});
   f->Close();
 
   double AL{};
@@ -61,7 +54,7 @@ int main(int argc, char* argv[])
     lth = l;
     AL = (1 - lth) / (3 + lth);
     angParams.setVals({AL},{},{});
-    logL = calcLogL(pTVals, costhVals, phiVals, wVals, angParams, partialExpValues);
+    logL = calcLogL(data, angParams, partialExpValues);
     tout->Fill();
   }
 
