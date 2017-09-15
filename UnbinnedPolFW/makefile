@@ -3,7 +3,7 @@ include ../make_setup_heplx.mk
 ROOTLIBS=$(shell $(ROOT_CONFIG_BIN) --libs)
 ROOTCXXFLAGS=$(shell $(ROOT_CONFIG_BIN) --cflags)
 
-CXXFLAGS=-std=c++11 -Wall -Wextra -Wpedantic -Wshadow -O2 # -Wconversion # can't use conversion warnings, because there are a lot in ROOT
+CXXFLAGS=-std=c++14 -Wall -Wextra -Wpedantic -Wshadow -O3 -g # -Wconversion # can't use conversion warnings, because there are a lot in ROOT
 ROOFITLIBS=-lRooFit -lRooFitCore -lMinuit -lFoam
 
 CXX=$(GCC_BASE_DIR)/g++
