@@ -96,4 +96,4 @@ for n in hists:
     condMkDirFile(plname)
 
     # colz has no effect on 1D hists for drawOpt
-    mkplot(allhists, saveAs=plname, drawOpt='colz', legEntries=plotkeys)
+    mkplot(allhists, saveAs=plname, drawOpt='colz', legEntries=plotkeys, legPos='topleft')
