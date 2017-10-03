@@ -3,6 +3,7 @@
 
 #include <string>
 #include <regex>
+#include <iostream>
 
 /**
  * extract the 'rapX_ptY' part from the passed string (must not necessarily be a filename)
