@@ -90,9 +90,9 @@ def _getPositionOnCanvas(pos):
         return defaultPosition
 
     # possible positions (i.e. currently implemented)
-    posStrings = ['bottom', 'top', 'left', 'right', 'center']
+    posStrings = ['bottom', 'top', 'left', 'right', 'center', 'middle']
     # relative positions in canvas
-    vertPositions = {'bottom': [0.1, 0.3], 'top': [0.7, 0.9]}
+    vertPositions = {'bottom': [0.1, 0.3], 'top': [0.7, 0.9], 'middle': [0.4, 0.6]}
     horPositions = {'left': [0.1, 0.4], 'right': [0.6, 0.9], 'center': [0.35, 0.65]}
 
     getPos = lambda x,d : d[x] if x in d else None
@@ -277,7 +277,7 @@ def _setupCanvas(can, **kwargs):
 def mkplot(plots, **kwargs):
     """
     Small helper function to get a quick and dirty plot of a list of plottable root objects
-    for jupyter / ipython
+    for jupyter / ipython.
 
     Options:
     - ret: return the created TCanvas after plotting (default false)
@@ -288,14 +288,22 @@ def mkplot(plots, **kwargs):
     - legEntries: list of keys to be used in the legend
     - legPos: position of legend in plot.
        Possible horizontal positions: 'right', 'left', 'center',
-       Possible vertical positions: 'top', 'bottom'
+       Possible vertical positions: 'top', 'bottom', 'middle'
        Strings can apear in any order and concatenated as well as abbreviated as long as
        three characters are used for each position argument. Default is 'bottom right'
-    - {x,y}Range: define plotting range
+    - {x,y}Range: define plotting range.
+       Valid options are None or a list of length 2, where any of the entries can be None.
+       Passing None is equivalent to passing [None, None] in this case.
+       For any entry in the list that is None the value is determined from the data in the
+       plots. If a value is specified, that value will be used.
     - {x,y}Label: axis labels
     - drawOpt: additional (ROOT) draw options to be passed to the Draw() method
     - useCan: use an existing canvas instead of creating a new one
     - colors: override default colors. List of VALID colors indices in ROOTs color index
+    - saveAs: save the plot under the given name
+    - grid: enable grid on the plot
+    - log{x,y}: use log scale on specified axis
+    - size: control the size of the canvas. List of two numbers
     """
     from collections import Iterable
 
