@@ -22,5 +22,17 @@ std::string getBinFromFile(const std::string& filename)
   return "";
 }
 
+int getPtBinFromFile(const std::string& filename)
+{
+  constexpr auto rgxstr =".*(rap[0-9]+_)?pt([0-9]+).*";
+  const std::regex rgx(rgxstr);
+  std::smatch cm;
+
+  if (std::regex_match(filename, cm, rgx)) {
+    return std::stoi(cm[2].str());
+  }
+
+  return -1;
+}
 
 #endif
