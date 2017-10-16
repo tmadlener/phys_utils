@@ -5,6 +5,7 @@ import argparse
 import sys
 import os
 import multiprocessing
+import itertools
 
 def listSubDirs(directory):
     dpns_ls = sp.Popen(["dpns-ls {0}".format(directory)], stdout=sp.PIPE,
@@ -209,6 +210,10 @@ if __name__ == '__main__':
                         help='Only get the number of files to copy, but don\'t actually copy them.')
     parser.add_argument('-x', '--exclude-subtasks', action='store', nargs='+', dest='excltasks',
                         help='Do not retrieve the sub-tasks listed here even if listed in the subtasks list')
+    parser.add_argument('-N', '--nfiles', dest='nFiles', type=int, default=-1, action='store',
+                        help='Copy only nfiles files from dpm. Note: copying does not guarantee any order. '
+                        '-1 means to copy all files, which is default.')
+
 
     args = parser.parse_args()
 
@@ -216,5 +221,9 @@ if __name__ == '__main__':
     allFiles = dirBuilder.getFileList()
 
     filesToCopy = getFilesToCopy(allFiles, args.subtasks, args.excltasks)
+
+    # if nfiles is specified shorten the list (i.e. generator) of files to copy
+    if args.nFiles >= 0:
+        filesToCopy = itertools.islice(filesToCopy, args.nFiles)
 
     copyFiles(filesToCopy, args.resbase, args.nThreads, args.dryrun)
