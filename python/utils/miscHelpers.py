@@ -195,14 +195,19 @@ def parseVarBinning(binningStr):
     if len(binningStr) > 1:
         return [float(v) for v in binningStr]
 
-    if re.search(r"(\d+(\.\d+):?){3}", binningStr[0]):
-        [minVal, step, maxVal] = binningStr[0].split(':')
-        return np.arange(float(minVal), float(maxVal), float(step))
+    if re.search(r"(-?\d+(\.\d+):?){3}", binningStr[0]):
+        [minVal, step, maxVal] = (float(v) for v in binningStr[0].split(':'))
+        return np.arange(minVal, maxVal, step)
 
-    if re.search(r"\d+(\.\d+):\d+(\.\d+),\d+", binningStr[0]):
+    if re.search(r"(-?\d+(\.\d+)?:?){2},\d+", binningStr[0]):
         tmp = binningStr[0].split(':')
         tmp2 = tmp[1].split(',')
         return np.linspace(float(tmp[0]), float(tmp2[0]), int(tmp2[1]))
+
+    try:
+        return [float(binningStr[0])]
+    except ValueError:
+        pass
 
     print("Could not convert \'{}\' into a proper binning".format(binningStr))
 
