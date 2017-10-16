@@ -236,3 +236,16 @@ def getPartialMatcher(word, minchars, wrap=False):
         rgx = r''.join(['^', rgx, '$'])
 
     return rgx
+
+
+def tail(command):
+    """
+    Run the passed command (list of strings) via subprocess.Popen, capture the output
+    and return it, similar to 'tail -f command'.
+
+    https://stackoverflow.com/a/26006921
+    """
+    import subprocess
+    popen = subprocess.Popen(command, stdout=subprocess.PIPE)
+    for line in iter(popen.stdout.readline, ""):
+        yield line,
