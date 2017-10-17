@@ -1,3 +1,5 @@
+import json
+
 def parse_sacct_output(output):
     """
     Parse the output of sacct -b -n -P -j JobID
@@ -5,15 +7,12 @@ def parse_sacct_output(output):
     """
     def cond_add_to_dict(d, key, value):
         """
-        Add value to dict d under key. If key is already present, a list will be generated
-        for the values and the value will be stored there-in
+        Add value to dict d under key by creating a list or adding to it
         """
         if key in d:
-            if not hasattr(d[key], '__iter__'): # don't create lists of lists of lists
-                d[key] = [d[key]]
             d[key].append(value)
         else:
-            d[key] = value
+            d[key] = [value]
 
     status_dict = {}
     exit_code_dict = {}
@@ -83,7 +82,6 @@ def check_batch_file(jsonfile):
     """
     Check all entries of the batch job info in one batch job json file
     """
-    import json
     with open(jsonfile, 'r') as f:
         batchdata = json.load(f)
 
@@ -92,3 +90,33 @@ def check_batch_file(jsonfile):
         file_status.append(check_batch_job(entry))
 
     return all(file_status)
+
+
+def get_job_id(output):
+    """Get the job id from the sbatch output"""
+    import re
+    print(output) # print the output to the screen so the user can see what is going on
+    rgx = r'([0-9]+)'
+    m = re.search(rgx, output)
+    if m:
+        return int(m.group(1))
+    return None
+
+
+def append_to_json(json_file, data):
+    """If the json_file already exists, append the new json_data line to it, otherwise create it"""
+    # convert passed line into list, so that the json in the file can be appended to it
+    data = [data]
+    # check if file exists, if so add to data
+    try:
+        f = open(json_file, 'r')
+        json_data = json.load(f)
+        f.close()
+
+        for d in json_data:
+            data.append(d)
+    except IOError:
+        pass
+
+    with open(json_file, 'w') as f:
+        json.dump(data, f, indent=2, sort_keys=True)
