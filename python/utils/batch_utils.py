@@ -28,15 +28,13 @@ def parse_sacct_output(output):
     return [status_dict, exit_code_dict]
 
 
-def check_batch_job(batchinfo):
+def check_batch_job(job_id):
     """
     Check one batch job, with all the necessary info
     """
     from utils.miscHelpers import tail
 
-    job_id = str(batchinfo['job_id']) # needed as string later
     sacct_cmd = ['sacct', '-b', '-n', '-P', '-j', job_id]
-
     [status, excode] = parse_sacct_output(tail(sacct_cmd))
 
     def get_exit_codes(stat_dict, excodes, status):
@@ -85,11 +83,11 @@ def check_batch_file(jsonfile):
     with open(jsonfile, 'r') as f:
         batchdata = json.load(f)
 
-    file_status = []
+    job_ids = []
     for entry in batchdata:
-        file_status.append(check_batch_job(entry))
+        job_ids.append(str(entry['job_id']))
 
-    return all(file_status)
+    return check_batch_job(','.join(job_ids))
 
 
 def get_job_id(output):
