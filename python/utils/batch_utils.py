@@ -1,5 +1,51 @@
 import json
 
+def filter_batch_step(statuses, excodes):
+    """
+    If a batch job has exited, a .batch step is added. This function gets the
+    information from them and replaces the information from the original with it,
+    the .batch step has been run, otherwise the original will be retained.
+    """
+    from miscHelpers import flatten
+
+    # collect a list of all job ids that have to be removed / 'handled'
+    alljobs = list(flatten(statuses.values()))
+    rmjobs = []
+    for job in alljobs:
+        # if '.batch' in job and job.replace('.batch', '') in alljobs:
+        if '.'.join([job, 'batch']) in alljobs:
+            rmjobs.append(job)
+
+    # in the statuses we only have to remove the jobs from rmjobs from the appropriate list
+    # afterwards we simply remove keys with an empty list
+    for job in rmjobs:
+        batch_job = '.'.join([job, 'batch'])
+        for _, status_jobs in statuses.iteritems():
+            if job in status_jobs:
+                if batch_job in status_jobs:
+                    status_jobs.remove(batch_job)
+                else:
+                    status_jobs.remove(job)
+            else:
+                if batch_job in status_jobs:
+                    status_jobs.remove(batch_job)
+                    status_jobs.append(job)
+
+    rmstats = []
+    for status in statuses:
+        if len(statuses[status]) == 0:
+            rmstats.append(status)
+
+    for stat in rmstats:
+        del statuses[stat]
+
+    # from the exit codes we simply have to 'move' the .batch values to the 'normal ones'
+    for job in rmjobs:
+        batch_job = '.'.join([job, 'batch'])
+        excodes[job] = excodes[batch_job]
+        del excodes[batch_job]
+
+
 def parse_sacct_output(output):
     """
     Parse the output of sacct -b -n -P -j JobID
@@ -19,11 +65,10 @@ def parse_sacct_output(output):
     for output_line in output:
         [job_id, status, exit_code] = output_line[0].strip().split('|')
 
-        # filter out the .batch jobstep (which should always be present)
-        if '.batch' in job_id: continue
-
         cond_add_to_dict(status_dict, status, job_id)
         exit_code_dict[job_id] = exit_code
+
+    filter_batch_step(status_dict, exit_code_dict)
 
     return [status_dict, exit_code_dict]
 
@@ -72,6 +117,11 @@ def check_batch_job(job_id):
     if pending is not None:
         for (j, _) in pending:
             print('Job {} is still PENDING'.format(j))
+
+    cancelled = get_exit_codes(status, excode, 'CANCELLED')
+    if cancelled is not None:
+        for (j, _) in cancelled:
+            print('Job {} has been CANCELLED'.format(j))
 
     return False
 
