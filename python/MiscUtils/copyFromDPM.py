@@ -50,10 +50,13 @@ def copySingleFile((fullPath, destPath)):
         curWorker = multiprocessing.current_process()
         print("Copying file \'{0}\' to \'{1}\' using worker {2}".format(fullPath, destPath,
                                                                         curWorker.name))
+    xrdcp.wait() # wait for process to finish
+    if xrdcp.returncode != 0:
+        return
+
     with cpCounter.get_lock(): # increase copy-counter
         cpCounter.value += 1
 
-    xrdcp.wait() # wait for process to finish
 
 
 def initPool(counter, pCounter):
