@@ -69,7 +69,10 @@ def initPool(counter, pCounter):
 def copyFiles(fileListGen, destBase, nThreads=4, dryrun=False):
     """
     Copy all files from the fileList while figuring out wher exactly in the destBase
-    they should be stored
+    they should be stored.
+
+    Returns a tuple containing the number of copied files, the number of files
+    already present (and not overwritten) and the number of failed copies
     """
     from tqdm import tqdm
 
@@ -98,7 +101,7 @@ def copyFiles(fileListGen, destBase, nThreads=4, dryrun=False):
 
     if dryrun:
         print('Running would copy {0} files'.format(len(fileList)))
-        return
+        return (0,0,0) # since we don't attempt to copy files there can't be any failures
 
     counter = multiprocessing.Value('i', 0)
     pCounter = multiprocessing.Value('i', 0)
@@ -108,8 +111,11 @@ def copyFiles(fileListGen, destBase, nThreads=4, dryrun=False):
         for _ in copyPool.imap_unordered(copySingleFile, fileDestList):
             pbar.update()
 
-    print('Copied {0} files. {1} were already present and not overwritten'.format(counter.value, pCounter.value))
+    failed = len(fileList) - counter.value - pCounter.value
+    print('Copied {0} files. {1} were already present and not overwritten.'
+          ' For {2} there was an error'.format(counter.value, pCounter.value, failed))
 
+    return (counter.value, pCounter.value, failed)
 
 class DPMDirBuilder():
     """
@@ -229,4 +235,5 @@ if __name__ == '__main__':
     if args.nFiles >= 0:
         filesToCopy = itertools.islice(filesToCopy, args.nFiles)
 
-    copyFiles(filesToCopy, args.resbase, args.nThreads, args.dryrun)
+    _,_,nFailed = copyFiles(filesToCopy, args.resbase, args.nThreads, args.dryrun)
+    sys.exit(int(nFailed > 0))
