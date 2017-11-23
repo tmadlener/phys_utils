@@ -157,6 +157,19 @@ def dividePoint(n, d):
 
     return ratioPoint
 
+def subtractPoint(h, g):
+    """Subtract point g from h (only in 1 dimension)"""
+    from math import sqrt
+
+    diff = h.y - g.y
+    err_high = sqrt(g.eyh**2 + h.eyh**2)
+    err_low = sqrt(g.eyl**2 + g.eyl**2)
+
+    diff_point = TGAPoint()
+    diff_point.set(h.x, diff, h.exl, h.exh, err_low, err_high)
+
+    return diff_point
+
 
 def collectPoints(graph):
     """
@@ -215,6 +228,31 @@ def divide(h, g, name = ""):
         ratioPoints.append(dividePoint(nPoints[i], dPoints[i]))
 
     graph = createGraphFromPoints(ratioPoints)
+    if name:
+        graph.SetName(name)
+
+    return graph
+
+
+def subtract(h, g, name=''):
+    """
+    Subtract graph g from graph h. Return a new graph with the result
+    """
+    from ROOT import TGraphAsymmErrors
+
+    h_points = collectPoints(h)
+    g_points = collectPoints(g)
+
+    if len(h_points) != len(g_points):
+        print('Cannot subtract graphs with unequal number of points: '
+              '{} vs. {}'.format(len(h_points), len(g_points)))
+        return TGraphAsymmErrors()
+
+    difference_points = []
+    for i, p in enumerate(h_points):
+        difference_points.append(subtractPoint(p, g_points[i]))
+
+    graph = createGraphFromPoints(difference_points)
     if name:
         graph.SetName(name)
 
