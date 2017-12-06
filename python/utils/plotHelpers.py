@@ -33,6 +33,13 @@ def _defaultColors():
 
     return _colorIndices
 
+def get_palette_min():
+    """Get the color at the minimum of the currently set palette"""
+    from ROOT import TColor
+    # The color returned by GetColorPalette has to be converted to an index
+    # befor returning
+    return TColor.GetColor(TColor.GetColorPalette(0))
+
 
 def setColor(p, col):
     """Set color col to all attributes of the passed plottable p"""
