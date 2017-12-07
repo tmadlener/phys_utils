@@ -249,3 +249,32 @@ def tail(command):
     popen = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in iter(popen.stdout.readline, ""):
         yield line,
+
+
+def stringify(selection, reverse=False):
+    """
+    Get a string representation of a selection (as it is used e.g. in
+    TTree::Draw) or in RooDataSet::reduce.  If reverse is set to True,
+    the original representation can be obtained (with stripped
+    whitespace)
+    """
+    repl_pairs = (
+        ('>=', '_ge_'),
+        ('<=', '_le_'),
+        ('<', '_lt_'),
+        ('>', '_gt_'),
+        ('==', '_eq_'),
+        ('!=', '_ne_'),
+        ('&&', '_AND_'),
+        ('||', '_OR_')
+    )
+
+    ret_str = selection.replace(' ', '')
+    if reverse:
+        for rep, sym in repl_pairs:
+            ret_str = ret_str.replace(sym, rep)
+    else:
+        for sym, rep in repl_pairs:
+            ret_str = ret_str.replace(sym, rep)
+
+    return ret_str
