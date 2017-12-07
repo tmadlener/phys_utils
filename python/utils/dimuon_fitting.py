@@ -65,9 +65,10 @@ class FitModel:
 
 
 
-    def get_par_value(self, ws, par, run_sel):
+    def get_par_value(self, ws, par, snap=''):
         """Get the result fit parameter from the workspace"""
-        ws.loadSnapshot('snap_' + stringify(run_sel))
+        if snap:
+            ws.loadSnapshot(snap)
         var = ws.var(par)
 
         return [var.getVal(), var.getError()]
@@ -76,6 +77,7 @@ class FitModel:
 class JpsiModel(FitModel):
     def __init__(self, ws, intree=None):
         # if we don't plan to import data, we don't have to do anything here
+        print('========== Constructing JpsiModel')
         if intree is None:
             return
 
@@ -116,6 +118,7 @@ class JpsiModel(FitModel):
 class PsiPrimeModel(FitModel):
     def __init__(self, ws, intree=None):
         # if we don't plan to import data, we don't have to do anything here
+        print('========== Constructing PsiPrimeModel')
         if intree is None:
             return
 
@@ -153,6 +156,7 @@ class PsiPrimeModel(FitModel):
 class UpsilonModel(FitModel):
     def __init__(self, ws, intree=None):
         # if we don't plan to import data, we don't have to do anything here
+        print('========== Constructing UpsilonModel')
         if intree is None:
             return
 
