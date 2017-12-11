@@ -3,8 +3,15 @@
 import ROOT as ROOT
 import numpy as np
 
-from utils.dimuon_fitting import JpsiModel, PsiPrimeModel, UpsilonModel
-from utils.miscHelpers import stringify
+from utils.dimuon_fitting import JpsiModel, PsiPrimeModel, UpsilonModel, PhiModel
+from utils.miscHelpers import stringify, condMkDir
+from utils.plotHelpers import mkplot
+
+# expected periods
+_all_periods = ['Run2017B', 'Run2017C', 'Run2017D', 'Run2017E', 'Run2017F']
+
+# variables which should be plotted normalized against lumi
+_norm_lumi_vars = ['n_signal', 'n_bkg', 'n_1S', 'n_2S', 'n_3S']
 
 def get_trigger(filename):
     """
@@ -31,7 +38,8 @@ def get_model(trigger):
         return PsiPrimeModel('foo', None)
     if 'Upsilon' in trigger:
         return UpsilonModel('foo', None)
-
+    if 'Phi' in trigger:
+        return PhiModel('foo', None)
 
 
 def create_run_lumi_map(lumifile):
@@ -99,10 +107,12 @@ def make_period_graph(p_results, rl_map, variable, norm_lumi):
         vals[i] = var_val
         errs[i] = var_error
 
-    return ROOT.TGraphErrors(n_runs, runs, vals, np.zeros(n_runs, dtype='d'), errs)
+    graph = ROOT.TGraphErrors(n_runs, runs, vals, np.zeros(n_runs, dtype='d'), errs)
+    graph.SetMarkerStyle(20)
+    return graph
 
 
-def process_file(inputfile, variables, rl_map, plot=False):
+def process_file(inputfile, variables, rl_map, plot=False, outdir=''):
     """Process one of the input files"""
     print('========== Processing file {}'.format(inputfile))
     trigger = get_trigger(inputfile)
@@ -111,6 +121,8 @@ def process_file(inputfile, variables, rl_map, plot=False):
     fin = ROOT.TFile.Open(inputfile)
     ws = fin.Get('ws_massfit')
     snapnames = get_snapshot_names(ws)
+
+    period = get_period(inputfile)
 
     run_yields = {}
     for snap in snapnames:
@@ -121,7 +133,10 @@ def process_file(inputfile, variables, rl_map, plot=False):
         # load it here to not have to load it for every variable
         ws.loadSnapshot(snap)
 
-        # TODO: plots
+        if plot:
+            run_cuts = stringify(snap.replace('snap_', ''),reverse=True)
+            plot_name = '_'.join([trigger, period])
+            model.plot(ws, run_cuts, '/'.join([outdir, plot_name]))
 
         run_vals = {}
         for var in variables:
@@ -129,12 +144,9 @@ def process_file(inputfile, variables, rl_map, plot=False):
 
         run_yields[run] = run_vals
 
-    period = get_period(inputfile)
-
     graphs = {}
     for var in variables:
-        # TODO: handling to have variables and norm_lumi
-        graphs[var] = make_period_graph(run_yields, rl_map, var, True)
+        graphs[var] = make_period_graph(run_yields, rl_map, var, var in _norm_lumi_vars)
 
     return period, graphs
 
@@ -142,8 +154,12 @@ def process_file(inputfile, variables, rl_map, plot=False):
 def collect_graphs(graphs, variable):
     """Collect all graphs corresponding to a variable"""
     v_graphs = []
-    for period in graphs:
-        v_graphs.append(graphs[period][variable])
+    for period in _all_periods:
+        if period in graphs:
+            v_graphs.append(graphs[period][variable])
+        else:
+            v_graphs.append(ROOT.TGraph()) # append empty graph to have same colors
+            v_graphs[-1].SetMarkerStyle(20)
 
     return v_graphs
 
@@ -160,21 +176,33 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--variables', nargs='+', help='variables to plot')
     parser.add_argument('-p', '--plot', help='create plots', default=False,
                         action='store_true')
+    parser.add_argument('-o', '--outdir', help='output directory for run fit plots',
+                        default='./')
+    parser.add_argument('-y', '--ylabel', help='ylabel',
+                        default='yields / ub^{-1}')
+
+
 
     args = parser.parse_args()
 
-    rl_map = create_run_lumi_map(args.lumifile)
+    if args.plot:
+        condMkDir(args.outdir)
 
-    import pprint
-    pprint.pprint(rl_map)
+    rl_map = create_run_lumi_map(args.lumifile)
 
     all_res = {}
     for f in args.fitfiles:
-        period, graphs = process_file(f, args.variables, rl_map, args.plot)
+        period, graphs = process_file(f, args.variables, rl_map, args.plot, args.outdir)
         all_res[period] = graphs
 
 
-    ## TODO: fully automate plotting, the rest seems to work pretty fine
-    gg = collect_graphs(all_res, args.variables[0])
+    for var in args.variables:
+        var_graphs = collect_graphs(all_res, var)
 
-    mkplot(gg, saveAs='test.pdf')
+        # simply assume all files are from the same trigger
+        plotname = '_'.join([get_trigger(args.fitfiles[0]), var])
+
+        mkplot(var_graphs, saveAs=plotname + '.pdf',
+               grid=True, xRange=[296500, 307000], drawOpt='PE',
+               yRange=[0,None], yLabel=args.ylabel, xLabel='run',
+               legPos='botleft', legEntries=_all_periods)

@@ -251,7 +251,9 @@ def _setupPlotHist(canvas, xRange, yRange, plots, xlab, ylab):
     plotHist = canvas.DrawFrame(x[0], y[0], x[1], y[1])
 
     if xlab: plotHist.SetXTitle(xlab)
-    if ylab: plotHist.SetYTitle(ylab)
+    if ylab:
+        plotHist.SetYTitle(ylab)
+        plotHist.SetTitleOffset(1.4, 'Y')
 
     return plotHist
 
