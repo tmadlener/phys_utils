@@ -172,32 +172,35 @@ class UpsilonModel(FitModel):
 
 
     def _define_model(self, ws):
-        mean1S = ROOT.RooRealVar('mean1S', '#mu_{M}^{1S} / GeV', 9.5, 9.0, 9.8)
+        mean1S = ROOT.RooRealVar('mean1S', '#mu_{M}^{1S} / GeV', 9.5, 9.3, 9.8)
         sigma1S = ROOT.RooRealVar('sigma1S', '#sigma_{M}^{1S} / GeV', 0.0035, 0, 0.25)
-        alpha1S = ROOT.RooRealVar('alpha1S', '#alpha_{M}^{1S}', 0.6, 0, 2.5)
+        # alpha1S = ROOT.RooRealVar('alpha1S', '#alpha_{M}^{1S}', 0.6, 0, 2.5)
+        alpha1S = ROOT.RooRealVar('alpha1S', '#alpha_{M}^{1S}', 1.45, 1.4, 1.6)
         N1S = ROOT.RooRealVar('N1S', 'N_{M}^{1S}', 5)
 
         # mean2S = ROOT.RooRealVar('mean2S', '#mu_{M}^{2S} / GeV', 10.05, 9.8, 10.1)
         mean2S = ROOT.RooFormulaVar('mean2S', '#mu_{M}^{2S}',
                                     '@0 * {} / {}'.format(10023.26, 9460.30),
                                     ROOT.RooArgList(mean1S))
-        sigma2S = ROOT.RooRealVar('sigma2S', '#sigma_{M}^{2S} / GeV', 0.0035, 0, 0.25)
-        alpha2S = ROOT.RooRealVar('alpha2S', '#alpha_{M}^{2S}', 0.6, 0, 2.5)
+        sigma2S = ROOT.RooRealVar('sigma2S', '#sigma_{M}^{2S} / GeV', 0.0035, 0, 0.15)
+        # alpha2S = ROOT.RooRealVar('alpha2S', '#alpha_{M}^{2S}', 0.6, 0, 2.5)
+        alpha2S = ROOT.RooRealVar('alpha2S', '#alpha_{M}^{2S}', 1.1, 1.1, 2.5)
         N2S = ROOT.RooRealVar('N2S', 'N_{M}^{2S}', 5)
 
         # mean3S = ROOT.RooRealVar('mean3S', '#mu_{M}^{3S} / GeV', 10.5, 10.25, 10.5)
         mean3S = ROOT.RooFormulaVar('mean3S', '#mu_{M}^{1S}',
                                     '@0 * {} / {}'.format(10355.2, 9460.30),
                                     ROOT.RooArgList(mean1S))
-        sigma3S = ROOT.RooRealVar('sigma3S', '#sigma_{M}^{3S} / GeV', 0.0035, 0, 0.5)
-        alpha3S = ROOT.RooRealVar('alpha3S', '#alpha_{M}^{3S}', 0.6, 0, 2.5)
+        sigma3S = ROOT.RooRealVar('sigma3S', '#sigma_{M}^{3S} / GeV', 0.0035, 0, 0.15)
+        # alpha3S = ROOT.RooRealVar('alpha3S', '#alpha_{M}^{3S}', 0.6, 0, 2.5)
+        alpha3S = ROOT.RooRealVar('alpha3S', '#alpha_{M}^{3S}', 1.0, 0.8, 2.5)
         N3S = ROOT.RooRealVar('N3S', 'N_{M}^{3S}', 5)
 
         lamb = ROOT.RooRealVar('lambda', '#lambda_{bkg}', 0.0, -10, 10)
-        n_1S = ROOT.RooRealVar('n_1S', 'N_{sig}^{1S}', 1e4, 0, 1e7)
-        n_2S = ROOT.RooRealVar('n_2S', 'N_{sig}^{2S}', 1e4, 0, 1e7)
-        n_3S = ROOT.RooRealVar('n_3S', 'N_{sig}^{3S}', 1e4, 0, 1e7)
-        n_bkg = ROOT.RooRealVar('n_bkg', 'N_{bkg}', 1e3, 0, 1e6)
+        n_1S = ROOT.RooRealVar('n_1S', 'N_{sig}^{1S}', 1e5, 0, 1e9)
+        n_2S = ROOT.RooRealVar('n_2S', 'N_{sig}^{2S}', 1e4, 0, 1e9)
+        n_3S = ROOT.RooRealVar('n_3S', 'N_{sig}^{3S}', 1e4, 0, 1e9)
+        n_bkg = ROOT.RooRealVar('n_bkg', 'N_{bkg}', 1e3, 0, 1e9)
 
         # have to split the import, since overloading only works up to ~10 arguments
         getattr(ws, 'import')(ROOT.RooArgSet(mean1S, sigma1S, alpha1S, N1S,
@@ -242,3 +245,43 @@ class UpsilonModel(FitModel):
     def fix(self, ws):
         self._fix_params(ws, ['N1S', 'N2S', 'N3S',
                               'alpha1S', 'alpha2S', 'alpha3S'])
+
+
+class PhiModel(FitModel):
+    def __init__(self, ws, intree=None):
+        # if we don't plan to import data, we don't have to do anything here
+        if intree is None:
+            return
+
+        print('========== Importing data')
+        dimu_mass = ROOT.RooRealVar('oniaM', 'M^{#mu#mu} / GeV', 0.865, 1.16)
+        run = ROOT.RooRealVar('run', 'run', 0, 4000000)
+        data = ROOT.RooDataSet('data', 'mass fit data',
+                               ROOT.RooArgSet(dimu_mass, run),
+                               RooFit.Import(intree))
+        getattr(ws, 'import')(data) # import is keyword in python!
+
+        self._define_model(ws)
+
+    def _define_model(self, ws):
+        print('========== Defining fit model')
+
+        mean = ROOT.RooRealVar('meanM', '#mu_{M} / GeV', 1.02, 0.9, 1.1)
+        sigma = ROOT.RooRealVar('sigmaM', '#sigma_{M} / GeV', 0.0025, 0, 0.05)
+        alpha = ROOT.RooRealVar('alphaM', '#alpha_{M}', 1.1, 0.8, 2.5)
+        NM = ROOT.RooRealVar('NM', 'N_{M}', 5)
+
+        lamb = ROOT.RooRealVar('lambda', '#lambda_{bkg}', 0.0, -1, 1)
+        n_signal = ROOT.RooRealVar('n_signal', 'N_{sig}', 1e4, 0, 1e8)
+        n_bkg = ROOT.RooRealVar('n_bkg', 'N_{bkg}', 1e4, 0, 1e8)
+
+        getattr(ws, 'import')(ROOT.RooArgSet(mean, sigma, alpha, NM, lamb,
+                                             n_signal, n_bkg))
+
+        # ws.factory('RooGaussian::signal(oniaM, meanM, sigmaM)')
+        ws.factory('RooCBShape::signal(oniaM, meanM, sigmaM, alphaM, NM)')
+        ws.factory('RooExponential::background(oniaM, lambda)')
+        ws.factory('SUM::fit_model(n_signal * signal, n_bkg * background)')
+
+    def fix(self, ws):
+        self._fix_params(ws, ['NM', 'alphaM'])

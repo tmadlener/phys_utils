@@ -4,7 +4,7 @@ import ROOT as ROOT
 import os
 
 from utils.miscHelpers import createRandomString, condMkDirFile
-from utils.dimuon_fitting import JpsiModel, PsiPrimeModel, UpsilonModel
+from utils.dimuon_fitting import JpsiModel, PsiPrimeModel, UpsilonModel, PhiModel
 
 charm_trigger_selection = {
     'HLT_Dimuon10_PsiPrime_Barrel_Seagulls': 1,
@@ -35,6 +35,8 @@ def get_trig_bits(trigger):
     if 'PsiPrime' in trigger:
         return charm_trigger_selection
     if 'Upsilon' in trigger:
+        return onia_trigger_selection
+    if 'Phi' in trigger:
         return onia_trigger_selection
 
 
@@ -93,6 +95,8 @@ def create_model(ws, infile, trigger):
         return PsiPrimeModel(ws, tree)
     if 'Upsilon' in trigger:
         return UpsilonModel(ws, tree)
+    if 'Phi' in trigger:
+        return PhiModel(ws, tree)
 
 
 def get_runs_in_data(infile):
