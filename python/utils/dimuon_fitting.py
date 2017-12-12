@@ -139,8 +139,8 @@ class PsiPrimeModel(FitModel):
         N = ROOT.RooRealVar('NM', 'N_{M}', 2.5, 0, 6)
 
         lamb = ROOT.RooRealVar('lambda', '#lambda_{bkg}', 0.0, -10, 10)
-        n_signal = ROOT.RooRealVar('n_signal', 'N_{sig}', 1e4, 0, 1e7)
-        n_bkg = ROOT.RooRealVar('n_bkg', 'N_{bkg}', 1e3, 0, 1e6)
+        n_signal = ROOT.RooRealVar('n_signal', 'N_{sig}', 1e4, 0, 1e9)
+        n_bkg = ROOT.RooRealVar('n_bkg', 'N_{bkg}', 1e3, 0, 1e9)
 
         getattr(ws, 'import')(ROOT.RooArgSet(mean, sigma, alpha, N, lamb,
                                              n_signal, n_bkg))
