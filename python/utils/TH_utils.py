@@ -265,3 +265,28 @@ def createTGAE(h):
         ex.append(x[-1] - h.GetBinLowEdge(i))
 
     return createGraph(x, y, ex, ex, ey, ey)
+
+
+def calc_pulls(hist, func):
+    """Calculate the pulls between the function and the histogram"""
+    import numpy as np
+    from ROOT import TGraph
+
+    # store tha values into numpy arrays for easier manipulation
+    n_bins = hist.GetNbinsX()
+    get_vals = lambda h, n, f: [getattr(h, f)(i) for i in range(1, n + 1)]
+
+    bin_centers = np.array(get_vals(hist, n_bins, 'GetBinCenter'))
+    bin_conts = np.array(get_vals(hist, n_bins, 'GetBinContent'))
+    bin_errs = np.array(get_vals(hist, n_bins, 'GetBinError'))
+
+    func_vals = np.array([func.Eval(x) for x in bin_centers])
+
+    zero_bins = bin_conts == 0
+    pulls = (func_vals[~zero_bins] - bin_conts[~zero_bins]) / bin_errs[~zero_bins]
+
+    # COULDDO: calculate the errors of the pulls in the same way as RooFit does
+    # it in RooHist::makeResidHist by dividing the bin_errors by themselves,
+    # but this doesn't add any additional information, as all the errors will
+    # be 1 then by definition
+    return TGraph(n_bins - np.sum(zero_bins), bin_centers[~zero_bins], pulls)
