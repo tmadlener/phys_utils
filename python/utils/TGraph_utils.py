@@ -257,3 +257,30 @@ def subtract(h, g, name=''):
         graph.SetName(name)
 
     return graph
+
+
+def merge_graphs(graphs):
+    """
+    Merge all passed graphs into one TGraph.
+    The x-values will not be ordered, but will appear as they appear
+    in the passed graphs.
+
+    TODO: - handle asymmetric uncertainties
+    """
+    import numpy as np
+    from ROOT import TGraphErrors
+
+    x_vals = np.array([], dtype='d')
+    y_vals = np.array([], dtype='d')
+    x_errs = np.array([], dtype='d')
+    y_errs = np.array([], dtype='d')
+
+    for graph in graphs:
+        x_vals = np.append(x_vals, np.array(graph.GetX()))
+        y_vals = np.append(y_vals, np.array(graph.GetY()))
+        x_errs = np.append(x_errs, np.array(graph.GetEX()))
+        y_errs = np.append(y_errs, np.array(graph.GetEY()))
+
+    n_points = x_vals.shape[0]
+
+    return TGraphErrors(n_points, x_vals, y_vals, x_errs, y_errs)
