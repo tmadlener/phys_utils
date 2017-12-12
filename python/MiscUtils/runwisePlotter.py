@@ -174,14 +174,16 @@ if __name__ == '__main__':
     parser.add_argument('lumifile', help='file (csv) containing lumi info as obtained from brilcalc')
     parser.add_argument('fitfiles', nargs='+', help='fitfiles to process')
     parser.add_argument('-v', '--variables', nargs='+', help='variables to plot')
-    parser.add_argument('-p', '--plot', help='create plots', default=False,
+    parser.add_argument('-p', '--plot', help='create plots for each run', default=False,
                         action='store_true')
     parser.add_argument('-o', '--outdir', help='output directory for run fit plots',
                         default='./')
     parser.add_argument('-y', '--ylabel', help='ylabel',
                         default='yields / ub^{-1}')
-
-
+    parser.add_argument('-s', '--savetofile', default=None, type=str,
+                        help='outputfile name to which the generated graphs should be stored')
+    parser.add_argument('-np', '--noplots', default=False, action='store_true',
+                        help='Do not create plots, but only write graphs to file')
 
     args = parser.parse_args()
 
@@ -195,14 +197,25 @@ if __name__ == '__main__':
         period, graphs = process_file(f, args.variables, rl_map, args.plot, args.outdir)
         all_res[period] = graphs
 
+    if args.savetofile is not None:
+        gsave_file = ROOT.TFile(args.savetofile, 'update')
 
-    for var in args.variables:
-        var_graphs = collect_graphs(all_res, var)
+        for period in all_res:
+            for var in all_res[period]:
+                all_res[period][var].SetName('_'.join([period, var]))
+                all_res[period][var].Write()
 
-        # simply assume all files are from the same trigger
-        plotname = '_'.join([get_trigger(args.fitfiles[0]), var])
+        # gsave_file.Write()
+        gsave_file.Close()
 
-        mkplot(var_graphs, saveAs=plotname + '.pdf',
-               grid=True, xRange=[296500, 307000], drawOpt='PE',
-               yRange=[0,None], yLabel=args.ylabel, xLabel='run',
-               legPos='botleft', legEntries=_all_periods)
+    if not args.noplots:
+        for var in args.variables:
+            var_graphs = collect_graphs(all_res, var)
+
+            # simply assume all files are from the same trigger
+            plotname = '_'.join([get_trigger(args.fitfiles[0]), var])
+
+            mkplot(var_graphs, saveAs=plotname + '.pdf',
+                   grid=True, xRange=[296500, 307000], drawOpt='PE',
+                   yRange=[0,None], yLabel=args.ylabel, xLabel='run',
+                   legPos='botleft', legEntries=_all_periods)
