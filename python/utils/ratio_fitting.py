@@ -26,7 +26,7 @@ class CosthRatioFit():
     """Class handling the fitting of costh ratios."""
     def __init__(self, ratio_hist, ratio_func, **kwargs):
         """Setup everything"""
-        self._setup_data(ratio_hist)
+        self._setup_data(ratio_hist, kwargs.pop('use_center', False))
         self._setup_func(ratio_func)
         self._setup_fitter(kwargs.pop('fix_params', None))
         self._migrad = False
@@ -92,10 +92,11 @@ class CosthRatioFit():
         self.fitter.GetMinimizer().PrintResults()
 
 
-    def _setup_data(self, hist_data):
+    def _setup_data(self, hist_data, use_center):
         """Create the data in the format usable by the Fitter class"""
         opt = rf.DataOptions()
-        opt.fIntegral = True # use the integral of the function in the bin, instead of central value
+         # use the integral of the function in the bin, instead of central value if True
+        opt.fIntegral = not use_center
         opt.fUseEmpty = False # ignore empty bins in data
 
         self.data = rf.BinData(opt)
