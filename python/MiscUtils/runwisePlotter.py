@@ -107,6 +107,12 @@ def make_period_graph(p_results, rl_map, variable, norm_lumi):
         vals[i] = var_val
         errs[i] = var_error
 
+    # sort the values by run number
+    run_idcs = runs.argsort()
+    runs = runs[run_idcs]
+    vals = vals[run_idcs]
+    errs = errs[run_idcs]
+
     graph = ROOT.TGraphErrors(n_runs, runs, vals, np.zeros(n_runs, dtype='d'), errs)
     graph.SetMarkerStyle(20)
     return graph
