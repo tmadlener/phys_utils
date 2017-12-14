@@ -70,16 +70,22 @@ def plotOnCanvas(can, plots, **kwargs):
     colors = kwargs.pop('colors', _defaultColors())
     getCol = lambda i: colors[ i % len(colors) ]
 
-    drawOption = ''.join(['same', kwargs.pop('drawOpt', '')])
+    legOption = kwargs.pop('drawOpt', '')
+    drawOption = ''.join(['same', legOption])
     legend = kwargs.pop('leg', None)
     legEntries = kwargs.pop('legEntries', [h.GetName() for h in plots])
+
+    # cant make pop above default to 'ple', since that alters the
+    # draw option defaults
+    if not legOption:
+        legOption = 'ple'
 
     for i in range(len(plots)):
         setColor(plots[i], getCol(i))
         plots[i].Draw(drawOption)
 
         if legend is not None:
-            legend.AddEntry(plots[i], legEntries[i], 'ple')
+            legend.AddEntry(plots[i], legEntries[i], legOption)
 
     if legend is not None:
         legend.Draw()
