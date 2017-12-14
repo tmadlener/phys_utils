@@ -178,13 +178,20 @@ def _getMinMax(plots):
                 maxsX.append(p.GetBinLowEdge(p.GetNbinsX()) + p.GetBinWidth(p.GetNbinsX()))
                 minsY.append(p.GetBinContent(p.GetMinimumBin()))
                 maxsY.append(p.GetBinContent(p.GetMaximumBin()))
-            elif p.InheritsFrom('TGraph'):
+            elif p.InheritsFrom('TGraphErrors') or p.InheritsFrom('TGraphAsymmErrors'):
                 for i in range(p.GetN()):
                     p.GetPoint(i, x, y)
                     minsX.append(x.real - p.GetErrorXlow(i))
                     maxsX.append(x.real + p.GetErrorXhigh(i))
                     minsY.append(y.real - p.GetErrorYlow(i))
                     maxsY.append(y.real + p.GetErrorYhigh(i))
+            elif p.InheritsFrom('TGraph'):
+                for i in range(p.GetN()):
+                    p.GetPoint(i, x, y)
+                    minsX.append(x.real)
+                    maxsX.append(x.real)
+                    minsY.append(y.real)
+                    maxsY.append(y.real)
             elif p.InheritsFrom('TF1'):
                 minsX.append(p.GetXmin())
                 maxsX.append(p.GetXmax())
