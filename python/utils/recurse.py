@@ -124,13 +124,13 @@ def collectHistograms(f, basename='', coll=HistCollector):
     return hColl.objects
 
 
-def collectGraphs(f, basename):
+def collectGraphs(f, basename=''):
     """
     Collect all graphs from file matching basename
     """
     class TGraphCollector(ObjectCollector):
         def __init__(self, rgx):
-            ObjectCollector.__init__(self, rgx, "TGraphAsymmErrors")
+            ObjectCollector.__init__(self, rgx, "TGraph")
 
     coll = TGraphCollector(basename)
     recurseOnFile(f, coll)
