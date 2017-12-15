@@ -193,9 +193,9 @@ def parseVarBinning(binningStr):
     Exits with value 1 if no parsing can be done
     """
     if len(binningStr) > 1:
-        return [float(v) for v in binningStr]
+        return np.array([float(v) for v in binningStr])
 
-    if re.search(r"(-?\d+(\.\d+):?){3}", binningStr[0]):
+    if re.search(r"(-?\d+(\.\d+)?:?){3}", binningStr[0]):
         [minVal, step, maxVal] = (float(v) for v in binningStr[0].split(':'))
         return np.arange(minVal, maxVal, step)
 
@@ -205,7 +205,7 @@ def parseVarBinning(binningStr):
         return np.linspace(float(tmp[0]), float(tmp2[0]), int(tmp2[1]))
 
     try:
-        return [float(binningStr[0])]
+        return np.array([float(binningStr[0])])
     except ValueError:
         pass
 
